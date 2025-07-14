@@ -1,0 +1,20 @@
+{
+  "name": "nutrition-scale-project",
+  "version": "1.0.0", 
+  "description": "智能食物秤Pro交互原型项目",
+  "scripts": {
+    "setup-figma": "./setup-figma.sh",
+    "start-figma": "cd mcp-figma && npm start",
+    "dev-figma": "cd mcp-figma && npm run dev",
+    "test-figma": "cd mcp-figma && node -e \"console.log('Figma MCP服务器测试')\"",
+    "serve": "python3 -m http.server 8080",
+    "serve-php": "php -S localhost:8080"
+  },
+  "keywords": ["prototype", "ui", "ux", "figma", "mcp"],
+  "author": "产品中心 - 胡中华",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/laosj16/nutrition_scale_project.git"
+  }
+}

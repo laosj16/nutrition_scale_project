@@ -15,11 +15,26 @@
 1. 克隆仓库到本地
 ```bash
 git clone https://github.com/laosj16/nutrition_scale_project.git
+cd nutrition_scale_project
 ```
 
 2. 在浏览器中打开 `index.html` 文件即可开始体验
 
 无需安装任何依赖或本地服务器！
+
+### 🎨 连接Figma（可选）
+
+如果您想连接Figma设计文件来同步设计资源：
+
+```bash
+# 运行配置向导
+npm run setup-figma
+
+# 启动Figma MCP服务器
+npm run start-figma
+```
+
+详细配置说明请查看 [Figma MCP文档](./mcp-figma/README.md)
 
 ## 🎯 功能特性
 
@@ -82,6 +97,28 @@ nutrition_scale_project/
 - **FontAwesome**：图标库
 - **响应式设计**：适配不同屏幕尺寸
 - **深色主题**：模拟真实设备外观
+- **Figma MCP集成**：可选的设计文件同步功能
+
+## 🔗 Figma集成
+
+项目包含了一个自定义的Figma MCP（Model Context Protocol）服务器，可以：
+
+- 📄 获取Figma设计文件信息
+- 🖼️ 导出设计资源和图片
+- 🎨 同步设计令牌（颜色、字体等）
+- 📦 获取组件和样式信息
+
+### 配置Figma连接
+
+```bash
+# 运行配置向导
+npm run setup-figma
+
+# 启动MCP服务器
+npm run start-figma
+```
+
+更多详情请查看 [mcp-figma/README.md](./mcp-figma/README.md)
 
 ## 👤 作者
 
