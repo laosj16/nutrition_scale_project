@@ -72,10 +72,43 @@ nutrition_scale_project/
 ├── low_battery.html                 # 低电量警告
 ├── Power_off.html                   # 返回与关机演示
 ├── charging_status.html             # 充电状态
-└── overload_prompt.html             # 超载提示
+├── overload_prompt.html             # 超载提示
+├── mcp-figma/                       # Figma MCP服务器
+│   ├── index.js                     # MCP服务器主文件
+│   ├── package.json                 # 依赖配置
+│   ├── README.md                    # MCP详细文档
+│   └── .env.example                 # 配置示例
+├── .vscode/                         # VS Code配置
+├── setup-figma.sh                   # Figma配置向导
+├── test-figma.sh                    # 测试脚本
+├── FIGMA_SETUP.md                   # 快速使用指南
+└── FIGMA_EXAMPLES.md                # 使用示例
 ```
 
 ## 🎮 使用说明
+
+### 🖥️ 基本使用
+1. 从 `index.html` 开始，查看完整的功能导航
+2. 点击链接进入各功能模块
+3. 使用底部控制按钮模拟设备交互
+4. 通过"返回目录"按钮随时回到导航页面
+
+### 🎨 Figma集成使用
+```bash
+# 快速配置
+npm run setup-figma
+
+# 启动MCP服务器
+npm run start-figma
+
+# 测试配置
+npm run test-figma
+```
+
+详细说明请查看：
+- [快速使用指南](./FIGMA_SETUP.md)
+- [使用示例](./FIGMA_EXAMPLES.md)
+- [完整文档](./mcp-figma/README.md)
 
 ### 交互控制
 每个页面底部都有模拟控制按钮：
@@ -83,12 +116,6 @@ nutrition_scale_project/
 - **确认/TARE/停止**：短按功能（根据上下文动态变化）
 - **长按（返回/关机）**：长按旋钮操作
 - **返回目录**：直接回到导航页面
-
-### 导航方式
-1. 从 `index.html` 开始，查看完整的功能导航
-2. 点击链接进入各功能模块
-3. 使用底部控制按钮模拟设备交互
-4. 通过"返回目录"按钮随时回到导航页面
 
 ## 🎨 技术实现
 

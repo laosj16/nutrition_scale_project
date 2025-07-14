@@ -6,7 +6,8 @@
     "setup-figma": "./setup-figma.sh",
     "start-figma": "cd mcp-figma && npm start",
     "dev-figma": "cd mcp-figma && npm run dev",
-    "test-figma": "cd mcp-figma && node -e \"console.log('Figma MCP服务器测试')\"",
+    "test-figma": "./test-figma.sh",
+    "demo-figma": "cd mcp-figma && npm run demo",
     "serve": "python3 -m http.server 8080",
     "serve-php": "php -S localhost:8080"
   },
