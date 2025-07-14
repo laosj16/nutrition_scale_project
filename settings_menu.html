@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>设置 - 智能食物秤 Pro</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .device-screen {
+            width: 100%; max-width: 480px; aspect-ratio: 4 / 3;
+            background-color: #1a1a1a; color: #e0e0e0;
+            border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            display: flex; flex-direction: column;
+            overflow: hidden; position: relative;
+        }
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 36px; position: relative; }
+        .status-bar i { font-size: 18px; color: #e0e0e0; line-height: 1; }
+        #status-prompt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 15px; color: #a0a0a0; white-space: nowrap; max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; }
+
+        /* Main Content Area - Wider padding */
+        .main-content {
+            flex-grow: 1;
+            padding: 15px 20px; /* Increased horizontal padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+             scrollbar-width: none;
+             -ms-overflow-style: none;
+        }
+         .main-content::-webkit-scrollbar { display: none; }
+
+        /* Settings List - Remove max-width */
+        .settings-list {
+            list-style: none;
+            padding: 0;
+            margin: 0 auto; /* Center list within main-content padding */
+            width: 100%;
+            /* max-width: 300px; Removed max-width */
+        }
+        /* Settings Item - Wider padding */
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px; /* Increased padding */
+            margin-bottom: 10px; /* Increased margin */
+            border-radius: 8px; /* Slightly larger radius */
+            transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+            border: 2px solid transparent;
+            cursor: default;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .settings-item i {
+            font-size: 20px; /* Slightly larger icon */
+            width: 30px;
+            text-align: center;
+            margin-right: 15px; /* More space */
+            color: #a0a0a0;
+            transition: color 0.15s ease-in-out;
+        }
+        .settings-item span {
+            font-size: 17px; /* Slightly larger text */
+            font-weight: 500;
+        }
+        /* Selected Item Style */
+        .settings-item.selected {
+            background-color: #4a5568;
+            border-color: #718096;
+            color: #ffffff;
+        }
+        .settings-item.selected i {
+            color: #ffffff;
+        }
+
+        /* Brightness Status Bar Styles */
+        .brightness-bar-container {
+            display: flex;
+            align-items: center;
+            margin-left: auto; /* Pushes the bar to the right */
+            width: 150px; /* Adjust width as needed - Increased from 100px */
+            height: 12px; /* Adjust height as needed */
+            background-color: #333; /* Track color */
+            border-radius: 6px;
+            padding: 2px; /* Optional padding for the track */
+            box-sizing: border-box;
+        }
+        .brightness-bar-fill {
+            height: 100%;
+            background-color: #facc15; /* Fill color (bright yellow) */
+            border-radius: 4px; /* Slightly smaller radius than container */
+            transition: width 0.2s ease-in-out;
+            width: 0%; /* Initial width */
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            width: 50px; /* Width of the toggle switch */
+            height: 26px; /* Height of the toggle switch */
+            background-color: #555; /* Background when off */
+            border-radius: 13px; /* Fully rounded ends */
+            padding: 3px;
+            box-sizing: border-box;
+            cursor: default;
+            transition: background-color 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            margin-left: auto; /* Pushes the switch to the right */
+            position: relative; /* For knob positioning */
+        }
+        .toggle-switch.on {
+            background-color: #facc15; /* Background when on (统一为黄色) */
+        }
+        .toggle-knob {
+            width: 20px; /* Diameter of the knob */
+            height: 20px; /* Diameter of the knob */
+            background-color: white;
+            border-radius: 50%; /* Circular knob */
+            transition: transform 0.2s ease-in-out;
+            position: absolute;
+            left: 3px; /* Initial position (off) */
+        }
+        .toggle-switch.on .toggle-knob {
+            transform: translateX(24px); /* Move knob to the right when on (width - knob_width - padding*2) approx */
+        }
+
+        /* Hint Bar - Keep absolutely positioned */
+        .hint-bar {
+            text-align: center;
+            padding: 8px 10px 12px 10px;
+            background-color: rgba(0, 0, 0, 0.3);
+            font-size: 15px;
+            color: #b0b0b0;
+            height: 36px;
+            line-height: 20px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            z-index: 5;
+        }
+
+        /* Overlays and Progress Ring Styles */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease; }
+        .overlay.visible { opacity: 1; visibility: visible; }
+        .progress-ring { position: relative; width: 90px; height: 90px; margin-bottom: 1rem; }
+        .progress-ring__circle { transition: 0.1s stroke-dashoffset linear, 0.2s stroke ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
+        .progress-ring__svg circle { stroke-width: 6; }
+        .progress-ring__svg .progress-ring__circle--background { r: 42; cx: 45; cy: 45; stroke: #555;}
+        .progress-ring__svg .progress-ring__circle { r: 42; cx: 45; cy: 45; }
+        .progress-ring__text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: bold; }
+        #long-press-action-text { font-size: 1.1rem; text-align: center; padding: 0 10px;}
+        @keyframes blink-color { 0%, 100% { color: #facc15; } 50% { color: #ffffff; } }
+        .blink-text { animation: blink-color 1s infinite; font-weight: bold; }
+        #power-off-confirm-overlay .confirm-options { display: flex; gap: 20px; margin-top: 20px; }
+        #power-off-confirm-overlay .option { padding: 8px 16px; border: 2px solid #555; border-radius: 6px; cursor: default; transition: background-color 0.2s, border-color 0.2s; }
+        #power-off-confirm-overlay .option.selected { background-color: #007AFF; border-color: #0056b3; }
+
+        /* Interaction Controls Styles */
+        .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .control-button { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; background-color: #4f46e5; color: white; border: none; border-radius: 0.375rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-button:hover { background-color: #4338ca; }
+        .control-button:active { transform: scale(0.95); }
+        .control-button.secondary { background-color: #64748b; }
+        .control-button.secondary:hover { background-color: #475569; }
+        .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div class="device-screen">
+        <div class="status-bar">
+            <i class="fa-brands fa-bluetooth-b"></i>
+            <span id="status-prompt">设置</span>
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+
+        <div class="main-content">
+            <ul class="settings-list">
+                <li class="settings-item" id="brightness-control-item">
+                    <i class="fa-solid fa-sun"></i> <span>亮度调节</span>
+                    <div class="brightness-bar-container">
+                        <div id="brightness-status-bar-fill" class="brightness-bar-fill"></div>
+                    </div>
+                </li>
+                <li class="settings-item" id="sound-control-item">
+                    <i class="fa-solid fa-volume-high"></i> <span>声音设置</span>
+                    <div class="toggle-switch" id="sound-toggle">
+                        <div class="toggle-knob"></div>
+                    </div>
+                </li>
+                <li class="settings-item" data-target="settings_language.html">
+                    <i class="fa-solid fa-language"></i> <span>语言设置</span>
+                    <span id="current-language" style="margin-left: auto; color: #a0a0a0;">中文简体</span>
+                </li>
+                <li class="settings-item" data-target="settings_factory_reset.html">
+                     <i class="fa-solid fa-arrows-rotate"></i> <span>恢复出厂设置</span>
+                </li>
+                 <li class="settings-item" data-target="settings_about.html">
+                     <i class="fa-solid fa-circle-info"></i> <span>关于设备</span>
+                </li>
+            </ul>
+        </div>
+
+        <div id="hint-bar" class="hint-bar">
+            旋转选择, 短按确认
+        </div>
+
+        <div id="long-press-overlay" class="overlay">
+             <div class="progress-ring"> <svg class="progress-ring__svg" width="90" height="90"> <circle class="progress-ring__circle progress-ring__circle--background" fill="transparent" r="42" cx="45" cy="45"/> <circle id="progress-circle" class="progress-ring__circle" stroke="#007AFF" stroke-linecap="round" fill="transparent" r="42" cx="45" cy="45"/> </svg> <span id="progress-text" class="progress-ring__text"></span> </div>
+            <p id="long-press-action-text" class="mt-1 text-lg"></p>
+        </div>
+        <div id="power-off-confirm-overlay" class="overlay">
+            <p class="text-xl mb-4">确认关机?</p>
+            <div class="confirm-options"> <span id="confirm-cancel" class="option selected">取消</span> <span id="confirm-power-off" class="option">确认</span> </div>
+            <p class="text-sm mt-4 text-gray-400">旋转选择, 短按确认 (3秒后自动取消)</p>
+        </div>
+    </div>
+
+    <div class="interaction-controls">
+        <button id="btn-rotate-left" class="control-button" title="模拟向左旋转">← 旋转</button>
+        <button id="btn-rotate-right" class="control-button" title="模拟向右旋转">旋转 →</button>
+        <button id="btn-short-press" class="control-button" title="模拟短按确认">确认 (短按)</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
+        <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
+    </div>
+
+    <script>
+        // --- DOM Elements & Function Definitions (Inside 'load' event) ---
+        window.addEventListener('load', () => {
+            // --- DOM Element Selection ---
+            const settingsList = document.querySelector('.settings-list');
+            const settingsItems = settingsList.querySelectorAll('.settings-item');
+            const hintBar = document.getElementById('hint-bar');
+            const longPressOverlay = document.getElementById('long-press-overlay');
+            const progressCircle = document.getElementById('progress-circle');
+            const progressText = document.getElementById('progress-text');
+            const longPressActionText = document.getElementById('long-press-action-text');
+            const powerOffConfirmOverlay = document.getElementById('power-off-confirm-overlay');
+            const confirmCancelBtn = document.getElementById('confirm-cancel');
+            const confirmPowerOffBtn = document.getElementById('confirm-power-off');
+            const btnRotateLeft = document.getElementById('btn-rotate-left');
+            const btnRotateRight = document.getElementById('btn-rotate-right');
+            const btnShortPress = document.getElementById('btn-short-press');
+            const btnLongPress = document.getElementById('btn-long-press');
+            const btnReturnIndex = document.getElementById('btn-return-index');
+            const statusPrompt = document.getElementById('status-prompt');
+            // btnToggleLanguage removed
+
+            // --- State Variables ---
+            let selectedIndex = 0;
+            let longPressTimer = null; let longPressStartTime = 0; let currentLongPressDuration = 0;
+            let longPressActive = false; let longPressThresholdMet = false;
+            const SHOW_OVERLAY_DURATION = 1000; const POWER_CONFIRM_DURATION = 5000;
+            const POWER_CONFIRM_TIMEOUT_DURATION = 3000; const LONG_PRESS_COLOR_BACK = '#007AFF';
+            let isPowerConfirmActive = false; let powerConfirmSelection = 'cancel'; let powerConfirmTimeout = null;
+            const radius = 42; const circumference = radius * 2 * Math.PI;
+
+            // --- Language Control State ---
+            const languages = ['中文简体', '中文繁體', 'English', '한국어', '日本語'];
+            let currentLanguageIndex = 0;
+            const currentLanguageElement = document.getElementById('current-language');
+
+            // --- Brightness Control State ---
+            let currentBrightnessLevel = 3; // 1=20%, 2=40%, 3=60%, 4=80%, 5=100%. Default to 3 (60%).
+            const TOTAL_BRIGHTNESS_LEVELS = 5;
+            const brightnessBarFill = document.getElementById('brightness-status-bar-fill');
+
+            // --- Sound Control State ---
+            let isSoundOn = true; // Default to sound ON
+            const soundToggleElement = document.getElementById('sound-toggle');
+
+
+            // --- Function Definitions ---
+            function updateBrightnessVisual() {
+                if (!brightnessBarFill) return;
+                const percentage = currentBrightnessLevel * (100 / TOTAL_BRIGHTNESS_LEVELS);
+                brightnessBarFill.style.width = `${percentage}%`;
+
+                // Optional: Update body brightness or a pseudo-element for visual feedback
+                // Example: document.body.style.filter = `brightness(${0.1 + (percentage / 100 * 0.9)})`;
+                console.log(`Brightness set to level: ${currentBrightnessLevel} (${percentage}%)`);
+            }
+
+            function updateSoundToggleVisual() {
+                if (!soundToggleElement) return;
+                soundToggleElement.classList.toggle('on', isSoundOn);
+                console.log(`Sound is now: ${isSoundOn ? 'ON' : 'OFF'}`);
+            }
+
+            function updateLanguageVisual() {
+                if (!currentLanguageElement) return;
+                currentLanguageElement.textContent = languages[currentLanguageIndex];
+                console.log(`Language set to: ${languages[currentLanguageIndex]}`);
+            }
+
+            function updateSelection() {
+                settingsItems.forEach((item, index) => {
+                    if(item) item.classList.toggle('selected', index === selectedIndex);
+                });
+                 const selectedItem = settingsItems[selectedIndex];
+                 // Check if list exists and its parent (.main-content) is scrollable
+                 if (selectedItem && settingsList && settingsList.parentElement && settingsList.parentElement.scrollHeight > settingsList.parentElement.clientHeight) {
+                     selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                 }
+            }
+
+            function rotate(direction) {
+                 if (isPowerConfirmActive) { powerConfirmSelection = (powerConfirmSelection === 'cancel') ? 'power-off' : 'cancel'; updatePowerConfirmSelection(); resetPowerConfirmTimeout(); return; }
+                 selectedIndex = (selectedIndex + direction + settingsItems.length) % settingsItems.length;
+                 updateSelection();
+            }
+
+            function handleShortPress() {
+                 if (isPowerConfirmActive) { clearTimeout(powerConfirmTimeout); if (powerConfirmSelection === 'power-off') { simulatePowerOff(); } else { hidePowerConfirm(); } return; }
+
+                 const selectedItemElement = settingsItems[selectedIndex];
+                 if (!selectedItemElement) return;
+
+                 if (selectedItemElement.id === 'brightness-control-item') {
+                     currentBrightnessLevel++;
+                     if (currentBrightnessLevel > TOTAL_BRIGHTNESS_LEVELS) {
+                         currentBrightnessLevel = 1;
+                     }
+                     updateBrightnessVisual();
+                     if(statusPrompt) {
+                        const brightnessPercentage = currentBrightnessLevel * (100 / TOTAL_BRIGHTNESS_LEVELS);
+                        statusPrompt.textContent = `亮度: ${brightnessPercentage}%`;
+                        setTimeout(() => {
+                            if (statusPrompt.textContent === `亮度: ${brightnessPercentage}%`) {
+                                statusPrompt.textContent = "设置";
+                            }
+                        }, 1500);
+                     }
+                 } else if (selectedItemElement.id === 'sound-control-item') {
+                    isSoundOn = !isSoundOn;
+                    updateSoundToggleVisual();
+                    if(statusPrompt) {
+                        const soundStatusText = `声音: ${isSoundOn ? '开' : '关'}`;
+                        statusPrompt.textContent = soundStatusText;
+                        setTimeout(() => {
+                            if (statusPrompt.textContent === soundStatusText) {
+                                statusPrompt.textContent = "设置";
+                            }
+                        }, 1500);
+                    }
+                 } else {
+                     const targetPage = selectedItemElement.getAttribute('data-target');
+                     if (targetPage) {
+                         selectedItemElement.style.transition = 'transform 0.1s ease';
+                         selectedItemElement.style.transform = 'scale(0.98)';
+                         setTimeout(() => {
+                             selectedItemElement.style.transition = 'transform 0.2s ease-out, background-color 0.2s ease, border-color 0.2s ease';
+                             selectedItemElement.style.transform = 'scale(1)';
+                             console.log(`Navigating to: ${targetPage}`);
+                             window.location.href = targetPage;
+                         }, 100);
+                     }
+                 }
+            }
+
+            // --- Power Off & Long Press Logic ---
+            function showPowerConfirm() { isPowerConfirmActive = true; powerConfirmSelection = 'cancel'; updatePowerConfirmSelection(); if(powerOffConfirmOverlay) powerOffConfirmOverlay.classList.add('visible'); if(hintBar) hintBar.textContent = "旋转选择, 短按确认"; resetPowerConfirmTimeout(); }
+            function hidePowerConfirm() { if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout); isPowerConfirmActive = false; if(powerOffConfirmOverlay) powerOffConfirmOverlay.classList.remove('visible'); if(hintBar) hintBar.textContent = "旋转选择, 短按确认"; }
+            function updatePowerConfirmSelection() { if(confirmCancelBtn && confirmPowerOffBtn){ confirmCancelBtn.classList.toggle('selected', powerConfirmSelection === 'cancel'); confirmPowerOffBtn.classList.toggle('selected', powerConfirmSelection === 'power-off');} }
+            function resetPowerConfirmTimeout() { if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout); powerConfirmTimeout = setTimeout(() => { console.log("Power confirm timed out."); hidePowerConfirm(); }, POWER_CONFIRM_TIMEOUT_DURATION); }
+            function simulatePowerOff() { console.log("Simulating Power Off..."); if(powerOffConfirmOverlay) powerOffConfirmOverlay.innerHTML = '<p class="text-2xl">关机...</p>'; disableAllButtons(); }
+            function disableAllButtons() { [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {if(btn) btn.disabled = true;}); } // Removed btnToggleLanguage
+            function setProgress(percent) { if(!progressCircle) return; const offset = circumference - percent / 100 * circumference; progressCircle.style.strokeDashoffset = offset; }
+            function startLongPress() { if (longPressActive || isPowerConfirmActive || !longPressOverlay) return; longPressActive = true; longPressThresholdMet = false; longPressStartTime = Date.now(); currentLongPressDuration = 0; longPressOverlay.classList.remove('visible'); setProgress(0); const updateProgress = () => { if (!longPressActive) return; const elapsedTime = Date.now() - longPressStartTime; currentLongPressDuration = elapsedTime; if (!longPressThresholdMet && elapsedTime >= SHOW_OVERLAY_DURATION) { longPressThresholdMet = true; if(progressCircle) progressCircle.setAttribute('stroke', LONG_PRESS_COLOR_BACK); if(longPressActionText) longPressActionText.innerHTML = `此时<span class="blink-text">松开按钮</span>，<strong class="font-bold">返回上一级菜单</strong>`; if(longPressOverlay) longPressOverlay.classList.add('visible'); } if (longPressThresholdMet) { const progressPercent = Math.min(100, (elapsedTime / POWER_CONFIRM_DURATION) * 100); setProgress(progressPercent); const remainingSeconds = Math.ceil((POWER_CONFIRM_DURATION - elapsedTime) / 1000); if(progressText) progressText.textContent = remainingSeconds > 0 ? remainingSeconds : '0'; if (elapsedTime >= POWER_CONFIRM_DURATION) { cancelAnimationFrame(longPressTimer); longPressTimer = null; longPressActive = false; if(longPressOverlay) longPressOverlay.classList.remove('visible'); showPowerConfirm(); return; } } if (longPressActive) { longPressTimer = requestAnimationFrame(updateProgress); } }; longPressTimer = requestAnimationFrame(updateProgress); }
+            function cancelLongPress() { if (!longPressActive) return; longPressActive = false; if (longPressTimer) { cancelAnimationFrame(longPressTimer); longPressTimer = null; } if (longPressThresholdMet && longPressOverlay) { longPressOverlay.classList.remove('visible'); } if (currentLongPressDuration >= SHOW_OVERLAY_DURATION && currentLongPressDuration < POWER_CONFIRM_DURATION) { console.log("Executing Back Action (to Main Menu)..."); window.location.href = 'main_menu.html'; } else if (currentLongPressDuration < SHOW_OVERLAY_DURATION) { console.log("Long press cancelled (too short)."); } currentLongPressDuration = 0; longPressThresholdMet = false; }
+
+
+            // --- Event Listeners ---
+            if(btnRotateLeft) btnRotateLeft.addEventListener('click', () => rotate(-1));
+            if(btnRotateRight) btnRotateRight.addEventListener('click', () => rotate(1));
+            if(btnShortPress) btnShortPress.addEventListener('click', handleShortPress);
+            if(btnLongPress) {
+                btnLongPress.addEventListener('mousedown', startLongPress);
+                btnLongPress.addEventListener('mouseup', cancelLongPress);
+                btnLongPress.addEventListener('mouseleave', cancelLongPress);
+            }
+            if(btnReturnIndex) btnReturnIndex.addEventListener('click', () => { window.location.href = 'index.html'; });
+
+            // btnToggleLanguage event listener removed
+
+            // --- Initial Setup ---
+            updateSelection();
+            updateBrightnessVisual();
+            updateSoundToggleVisual();
+            updateLanguageVisual();
+            if(progressCircle) {
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = circumference;
+            }
+            if(statusPrompt) statusPrompt.textContent = "设置";
+            if(hintBar) hintBar.textContent = "旋转选择 | 短按确认";
+
+            // 显示当前语言
+            const savedLanguage = localStorage.getItem('selectedLanguage') || 'zh-CN';
+            const languageMap = {
+                'zh-CN': '中文简体',
+                'zh-TW': '中文繁體',
+                'en': 'English',
+                'ko': '한국어',
+                'ja': '日本語'
+            };
+            if(currentLanguageElement) {
+                currentLanguageElement.textContent = languageMap[savedLanguage] || '中文简体';
+            }
+        });
+
+    </script>
+
+</body>
+</html>

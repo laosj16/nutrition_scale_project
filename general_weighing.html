@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通用称重 - 智能食物秤 Pro</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; justify-content: space-between; /* 修改为space-between以确保内容分布均匀 */ overflow: hidden; position: relative; }
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 32px; }
+        .status-bar > i { font-size: 18px; color: #e0e0e0; line-height: 1; flex-shrink: 0; } /* Ensure icons don't shrink */
+        .status-bar > span#status-prompt { 
+            flex-grow: 1; 
+            text-align: center; 
+            font-size: 15px; 
+            color: #a0a0a0; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            margin: 0 5px; /* Add some space between icons and text */
+        }
+
+        /* Main Content - 调整垂直居中 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* 改为center实现完全居中 */
+            padding: 10px;
+            position: relative;
+        }
+
+        /* Container for weight and unit */
+        .weight-unit-block {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline; /* 改用baseline对齐，这样可以更精确地对齐文本 */
+            justify-content: center;
+            gap: 20px;
+            position: relative; /* 添加相对定位以便调整子元素 */
+        }
+
+        /* Weight Display */
+        .weight-display {
+            font-size: 110px;
+            font-weight: 700;
+            line-height: 1; /* 调整行高以优化对齐效果 */
+            color: #ffffff;
+            text-align: right;
+            margin: 0;
+            padding: 0;
+            position: relative; /* 添加相对定位 */
+        }
+
+        /* Unit Display */
+        .unit-display {
+            font-size: 45px;
+            font-weight: 500;
+            color: #a0a0a0;
+            transition: color 0.3s ease;
+            line-height: 1; /* 与weight-display保持相同的行高 */
+            margin: 0;
+            padding: 0;
+            position: relative; /* 添加相对定位 */
+            transform: translateY(-4px); /* 向上微调单位位置 */
+        }
+
+        /* 所有单位通用位置，不再需要单独调整 */
+        .unit-display.unit-g,
+        .unit-display.unit-ml,
+        .unit-display.unit-oz,
+        .unit-display.unit-lb {
+            transform: translateY(-4px); /* 统一向上调整所有单位 */
+        }
+
+        /* Unit specific colors */
+        .unit-g { color: #60a5fa; } .unit-ml { color: #34d399; } .unit-oz { color: #fbbf24; } .unit-lb { color: #f87171; } .unit-lb-oz { color: #c084fc; }
+
+        /* TARE Indicator - Positioned relative to main-content, vertically centered */
+        .tare-indicator {
+            position: absolute;
+            top: 20px; /* 调整位置，确保不会影响主显示区域 */
+            transform: translateY(-50%);
+            left: 15px;
+            background-color: #007AFF;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .tare-indicator.visible { opacity: 1; }
+
+        /* Hint Bar */
+        .hint-bar { 
+            text-align: center; 
+            padding: 0 10px; /* Consistent padding */
+            background-color: rgba(0, 0, 0, 0.3); 
+            font-size: 15px; 
+            color: #b0b0b0; /* Default color for normal state */
+            flex-shrink: 0; 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            white-space: normal; /* Allow wrapping */
+            overflow: hidden; 
+            text-overflow: ellipsis;
+            opacity: 1; /* Default to visible */
+            line-height: normal; /* More flexible line height */
+        }
+        .hint-bar.long-press-active {
+            color: #ffffff; /* White text during long press */
+        }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
+
+        /* Interaction Controls Styles */
+        .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .control-button { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; background-color: #4f46e5; color: white; border: none; border-radius: 0.375rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-button:hover { background-color: #4338ca; }
+        .control-button:active { transform: scale(0.95); }
+        .control-button.secondary { background-color: #64748b; }
+        .control-button.secondary:hover { background-color: #475569; }
+        .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div class="device-screen">
+        <div class="status-bar">
+            <i class="fa-brands fa-bluetooth-b"></i>
+            <span id="status-prompt">通用称重</span> 
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+
+        <div class="main-content">
+            <div id="tare-indicator" class="tare-indicator">TARE</div>
+            <div class="weight-unit-block">
+                 <div id="weight-display" class="weight-display"></div>
+                 <div id="unit-display" class="unit-display"></div>
+            </div>
+        </div>
+
+        <div id="hint-bar" class="hint-bar">旋转切换单位｜短按去皮</div>
+    </div>
+
+    <div class="interaction-controls">
+        <button id="btn-rotate-left" class="control-button" title="模拟向左旋转">← 旋转</button>
+        <button id="btn-rotate-right" class="control-button" title="模拟向右旋转">旋转 →</button>
+        <button id="btn-short-press" class="control-button" title="模拟短按去皮/确认">确认/去皮</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
+        <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
+        <button id="btn-add-weight" class="control-button" style="background-color: #10b981;">加重量</button>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const weightDisplay = document.getElementById('weight-display');
+        const unitDisplay = document.getElementById('unit-display');
+        const hintBar = document.getElementById('hint-bar'); // Changed from hintText
+        const tareIndicator = document.getElementById('tare-indicator');
+        const statusPrompt = document.getElementById('status-prompt');
+
+
+        // Interaction Buttons
+        const btnRotateLeft = document.getElementById('btn-rotate-left');
+        const btnRotateRight = document.getElementById('btn-rotate-right');
+        const btnShortPress = document.getElementById('btn-short-press');
+        const btnLongPress = document.getElementById('btn-long-press');
+        const btnReturnIndex = document.getElementById('btn-return-index');
+        const btnAddWeight = document.getElementById('btn-add-weight');
+        // btnToggleLanguage removed
+
+        // --- State Variables ---
+        let currentWeight = 168.8;
+        const units = ['g', 'ml', 'fl:oz', 'oz', 'lb'];
+        const unitColors = { 
+            'g': 'unit-g', 
+            'ml': 'unit-ml', 
+            'fl:oz': 'unit-oz',  // 更新颜色映射
+            'oz': 'unit-oz',
+            'lb': 'unit-lb'
+        };
+        let currentUnitIndex = 0; // Default to 'g'
+        let tareTimeout = null;
+
+        let longPressTimer = null; // Used for requestAnimationFrame
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0; // Tracks how long the button has been pressed
+        let longPressActive = false; // Is a long press currently in progress?
+
+        const LONG_PRESS_RETURN_DURATION = 1000; // 1 second to trigger return
+        const LONG_PRESS_POWER_OFF_DURATION = 5000; // 5 seconds to trigger power off
+
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        const LONG_PRESS_ACTION_POWER_OFF = 2;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+
+        // --- Functions ---
+
+        function getDecimalPlaces(weight, unit) {
+            // 根据新的分度值规则返回应显示的小数位数
+            if (unit === 'g') {
+                if (weight < 1000) return 1; // <1000g 分度值0.1g
+                return 0;                    // >=1000g 分度值1g
+            } else if (unit === 'ml') {
+                if (weight < 1000) return 1; // <1000ml 分度值0.1ml
+                return 0;                    // >=1000ml 分度值1ml
+            } else if (unit === 'fl:oz') {
+                if (weight < 100) return 3;  // ＜100 fl:oz 分度值0.005fl：oz
+                return 2;                    // ≥100 fl:oz 分度值0.05fl：oz
+            } else if (unit === 'oz') {
+                if (weight < 100) return 3;  // ＜100oz 分度值0.005 oz
+                return 2;                    // ≥100oz 分度值0.05oz
+            } else if (unit === 'lb') {
+                if (weight < 2) return 4;    // ＜2lb 分度值0.0005 lb
+                return 3;                    // ≥2lb 分度值0.002lb
+            }
+            return 1; // 默认返回1位小数 (作为备用)
+        }
+
+        function roundToIncrement(value, increment) {
+            return Math.round(value / increment) * increment;
+        }
+
+        function updateDisplay() {
+            let displayWeight;
+            const currentUnit = units[currentUnitIndex];
+            
+            // 单位转换逻辑
+            let convertedWeight;
+            switch(currentUnit) {
+                case 'lb':
+                    const POUND_IN_G = 453.592;
+                    convertedWeight = currentWeight / POUND_IN_G;
+                    break;
+                    
+                case 'oz':
+                    const OUNCE_IN_G = 28.3495;
+                    convertedWeight = currentWeight / OUNCE_IN_G;
+                    break;
+                    
+                case 'fl:oz':
+                    const ML_PER_FL_OZ = 29.5735;
+                    convertedWeight = currentWeight / ML_PER_FL_OZ;
+                    break;
+                    
+                case 'ml':
+                case 'g':
+                default:
+                    convertedWeight = currentWeight;
+                    break;
+            }
+
+            // 根据重量范围确定小数位数
+            const decimalPlaces = getDecimalPlaces(convertedWeight, currentUnit);
+            let adjustedWeight = convertedWeight;
+
+            // 根据分度值调整重量
+            // 对于 g 和 ml，当分度值为 0.1 或 1 时，toFixed 的行为已经符合要求。
+            // 但为了处理更复杂的分度值（如此处其他单位），我们进行显式调整。
+            if (currentUnit === 'g') {
+                if (adjustedWeight < 1000) {
+                    // adjustedWeight = roundToIncrement(adjustedWeight, 0.1); // toFixed(1) 效果一致
+                } else {
+                    // adjustedWeight = roundToIncrement(adjustedWeight, 1);    // toFixed(0) 效果一致
+                }
+            } else if (currentUnit === 'ml') {
+                if (adjustedWeight < 1000) {
+                    // adjustedWeight = roundToIncrement(adjustedWeight, 0.1); // toFixed(1) 效果一致
+                } else {
+                    // adjustedWeight = roundToIncrement(adjustedWeight, 1);    // toFixed(0) 效果一致
+                }
+            } else if (currentUnit === 'fl:oz') {
+                if (adjustedWeight < 100) {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.005);
+                } else {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.05);
+                }
+            } else if (currentUnit === 'oz') {
+                if (adjustedWeight < 100) {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.005);
+                } else {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.05);
+                }
+            } else if (currentUnit === 'lb') {
+                if (adjustedWeight < 2) {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.0005);
+                } else {
+                    adjustedWeight = roundToIncrement(adjustedWeight, 0.002);
+                }
+            }
+            
+            // 处理接近零的情况
+            // 注意：这里我们用 convertedWeight 判断是否接近零，因为 adjustedWeight 可能因为取整而远离零
+            if (Math.abs(convertedWeight) < 0.0001) { // 使用一个更小的值来判断是否为零，避免浮点问题
+                 displayWeight = (0).toFixed(decimalPlaces); // 确保零也显示正确的小数位数
+            } else if (Math.abs(convertedWeight) < 0.3 && (currentUnit === 'g' || currentUnit === 'ml')) {
+                 // 对于g/ml的特殊0.0显示逻辑，如果调整后不为0，则按调整后的显示
+                 if (Math.abs(adjustedWeight) < 0.0001 && decimalPlaces === 1) { // 如果调整后为0且要求1位小数
+                    displayWeight = '0.0';
+                 } else {
+                    displayWeight = adjustedWeight.toFixed(decimalPlaces);
+                 }
+            } else {
+                displayWeight = adjustedWeight.toFixed(decimalPlaces);
+            }
+            
+            weightDisplay.textContent = displayWeight;
+            unitDisplay.textContent = currentUnit;
+            unitDisplay.className = 'unit-display';
+            if (unitColors[currentUnit]) {
+                unitDisplay.classList.add(unitColors[currentUnit]);
+            }
+        }
+
+        function rotateUnit(direction) {
+            currentUnitIndex = (currentUnitIndex + direction + units.length) % units.length;
+            updateDisplay();
+        }
+
+        function tareWeight() {
+            // 1. 立即显示 TARE 指示器
+            tareIndicator.classList.add('visible');
+            if (tareTimeout) {
+                clearTimeout(tareTimeout);
+            }
+
+            // 2. 设置1秒后隐藏 TARE 指示器，并在此之后更新重量
+            tareTimeout = setTimeout(() => {
+                tareIndicator.classList.remove('visible');
+                tareTimeout = null;
+                
+                // 将重量清零并更新显示
+                currentWeight = 0.0;
+                updateDisplay();
+            }, 1000); // 1秒后执行
+        }
+
+        function addWeight() {
+            currentWeight += Math.random() * 50 + 10; updateDisplay();
+        }
+
+        function handleShortPress() {
+            tareWeight();
+        }
+
+        function simulateDirectPowerOff() {
+            console.log("Simulating Direct Power Off - Black Screen");
+            disableAllButtons();
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = ''; // Remove all content
+                deviceScreen.style.backgroundColor = '#000000'; // Set background to black
+            }
+            // Ensure the long press loop is stopped if called from within it
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null; // Clear the timer ID
+                longPressActive = false; // Mark as no longer active
+            }
+        }
+
+        function disableAllButtons() {
+              [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex, btnAddWeight].forEach(btn => { // Removed btnToggleLanguage
+                if(btn) btn.disabled = true;
+              });
+        }
+
+        function startLongPress() {
+            if (longPressActive) return;
+            longPressActive = true;
+            longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+            if (hintBar) {
+                hintBar.classList.add('long-press-active'); 
+                // Opacity is now controlled by CSS default (should be 1)
+            }
+            
+            updateLongPressHintText(); // Set initial text
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        // Renamed from updateLongPressHint to be more specific
+        function updateLongPressHintText() { 
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            let remainingSecondsForPowerOff;
+
+            if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                if (hintBar) {
+                    hintBar.innerHTML = `长按<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>后将关机，现在松开旋钮返回上一级菜单`;
+                }
+                if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
+                    currentLongPressAction = LONG_PRESS_ACTION_NONE; 
+                } else {
+                    currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
+                }
+            } else { // currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION
+                // Directly trigger power off and stop further updates from this loop
+                if (longPressActive) { // Ensure it's only called once
+                    // No need to set currentLongPressAction to POWER_OFF as we are shutting down
+                    // No need to update hintBar text to "松开以关机"
+                    simulateDirectPowerOff(); 
+                    // Note: simulateDirectPowerOff should handle stopping the longPressTimer and longPressActive
+                }
+                return; // Exit function as device is "off"
+            }
+        }
+
+        function cancelLongPress() {
+            if (!longPressActive) return;
+            longPressActive = false;
+            if (longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+            }
+
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+                hintBar.innerHTML = '旋转切换单位｜短按去皮'; 
+            }
+            if (statusPrompt) statusPrompt.textContent = "通用称重"; 
+
+            // Power off is now handled by updateLongPressHintText if duration >= 5s
+            // So, if cancelLongPress is called, it means user released конку POWER_OFF_DURATION
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
+                console.log("Executing Back Action (松开时触发 <5s)...");
+                window.location.href = 'main_menu.html';
+            } else { 
+                console.log("Long press cancelled (不足1秒).");
+            }
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+        }
+
+        // --- Event Listeners ---
+        btnRotateLeft.addEventListener('click', () => rotateUnit(-1));
+        btnRotateRight.addEventListener('click', () => rotateUnit(1));
+        btnShortPress.addEventListener('click', handleShortPress);
+        btnAddWeight.addEventListener('click', addWeight);
+
+        btnReturnIndex.addEventListener('click', () => {
+            console.log("Returning to index page...");
+            window.location.href = 'index.html';
+        });
+
+        btnLongPress.addEventListener('mousedown', startLongPress);
+        btnLongPress.addEventListener('mouseup', cancelLongPress);
+        btnLongPress.addEventListener('mouseleave', cancelLongPress); 
+
+        // btnToggleLanguage event listener removed
+
+        // --- Initialization ---
+        window.addEventListener('load', () => {
+            updateDisplay(); 
+            if (hintBar) {
+                hintBar.innerHTML = '旋转切换单位｜短按去皮';
+                // hintBar.style.opacity = '1'; // Ensure it's visible on load if not by CSS default
+            }
+            if (statusPrompt) statusPrompt.textContent = "通用称重";
+        });
+
+    </script>
+
+</body>
+</html>

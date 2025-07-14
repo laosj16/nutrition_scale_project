@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>营养秤模式 - 智能食物秤 Pro</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Status Bar */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 36px; position: relative; }
+        .status-bar > i { font-size: 18px; color: #e0e0e0; line-height: 1; flex-shrink: 0; }
+        .status-bar > span#status-prompt { flex-grow: 1; text-align: center; font-size: 15px; color: #a0a0a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 5px; }
+
+        /* Main Content Area */
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; position: relative; width: 100%; overflow: hidden; }
+        #food-selection { width: 100%; max-width: 460px; height: 280px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
+        #food-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 460px; height: 280px; padding: 15px; box-sizing: border-box; }
+        .food-item { background-color: #333; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 16px; padding: 8px; border: 2px solid transparent; transition: all 0.2s ease-out; cursor: default; overflow: hidden; }
+        .food-item.selected { transform: scale(1.1); border-color: #3b82f6; background-color: #2563eb; z-index: 2; font-weight: bold; }
+        .nutrition-display { width: 100%; max-width: 95%; display: flex; flex-direction: column; align-items: center; height: 100%; overflow: hidden; padding: 0 5px; box-sizing: border-box; }
+        .weight-display-nutrition { display: flex; justify-content: center; align-items: baseline; margin-bottom: 8px; width: 100%; flex-shrink: 0; }
+        .weight-value { font-size: 64px; font-weight: 700; color: #ffffff; line-height: 1; }
+        .weight-unit { font-size: 22px; font-weight: 500; color: #a0a0a0; margin-left: 6px; transition: color 0.3s ease; }
+        .unit-g { color: #60a5fa; } .unit-ml { color: #34d399; } .unit-oz { color: #fbbf24; } .unit-lb { color: #f87171; } .unit-lb-oz { color: #c084fc; }
+        #nutrient-details-container { flex-grow: 1; width: 100%; overflow-y: auto; padding: 5px 0; scrollbar-width: none; -ms-overflow-style: none; }
+        #nutrient-details-container::-webkit-scrollbar { display: none; }
+        .all-nutrients-grid-custom { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; padding: 5px 0; }
+        .all-nutrients-grid-custom .nutrient-item { background-color: rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 8px; text-align: center; }
+        .all-nutrients-grid-custom .nutrient-name { font-size: 14px; color: #b0b0b0; margin-bottom: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .all-nutrients-grid-custom .nutrient-value { font-size: 20px; color: #ffffff; font-weight: 600; }
+        .all-nutrients-grid-custom .nutrient-unit { font-size: 12px; color: #a0a0a0; margin-left: 4px; }
+        .tare-indicator { position: absolute; top: 10px; left: 10px; background-color: #007AFF; color: white; padding: 3px 8px; border-radius: 5px; font-size: 14px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease-out; z-index: 5; white-space: nowrap; }
+        .tare-indicator.visible { opacity: 1; }
+        .hidden { display: none !important; }
+
+        /* Hint Bar Styles (from general_weighing.html) */
+        .hint-bar { text-align: center; padding: 0 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: 32px; display: flex; align-items: center; justify-content: center; white-space: normal; overflow: hidden; text-overflow: ellipsis; opacity: 1; line-height: normal; }
+        .hint-bar.long-press-active { color: #ffffff; }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
+
+        /* Interaction Controls Styles */
+        .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .control-button { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; background-color: #4f46e5; color: white; border: none; border-radius: 0.375rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-button:hover { background-color: #4338ca; }
+        .control-button:active { transform: scale(0.95); }
+        .control-button.secondary { background-color: #64748b; }
+        .control-button.secondary:hover { background-color: #475569; }
+        .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+<body>
+    <div class="device-screen">
+        <div class="status-bar">
+            <i class="fa-brands fa-bluetooth-b"></i>
+            <span id="status-prompt"></span>
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+        <div id="main-content" class="main-content">
+            <div id="tare-indicator" class="tare-indicator">TARE</div>
+            <div id="food-selection" class="food-selection">
+                <div id="food-grid"></div>
+            </div>
+            <div id="nutrition-display" class="nutrition-display hidden">
+                 <div id="weight-display-nutrition" class="weight-display-nutrition">
+                     <span id="weight-value" class="weight-value">0.0</span>
+                     <span id="weight-unit" class="weight-unit">g</span>
+                 </div>
+                 <div id="nutrient-details-container">
+                    <div id="all-nutrients-grid" class="all-nutrients-grid-custom"></div>
+                 </div>
+            </div>
+        </div>
+        <div id="hint-bar" class="hint-bar"></div>
+    </div>
+    <div class="interaction-controls">
+        <button id="btn-rotate-left" class="control-button" title="模拟向左旋转">← 旋转</button>
+        <button id="btn-rotate-right" class="control-button" title="模拟向右旋转">旋转 →</button>
+        <button id="btn-short-press" class="control-button" title="模拟短按">确认食物</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
+        <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
+        <button id="btn-add-weight" class="control-button" style="background-color: #10b981;">模拟加重</button>
+        <button id="btn-reset-weight" class="control-button" style="background-color: #f87171;">模拟清零</button>
+    </div>
+
+    <script>
+        // --- State Variables (Original from nutrition_scale.html) ---
+        let currentWeight = 0.0;
+        let selectedFoodIndex = 0;
+        let isFoodConfirmed = false;
+        const nutrients = [
+            { key: 'kcal', name: '卡路里', unit: 'kcal', precision: 0 }, { key: 'p', name: '蛋白质', unit: 'g', precision: 1 }, { key: 'f', name: '脂肪', unit: 'g', precision: 1 }, { key: 'c', name: '碳水', unit: 'g', precision: 1 },
+            { key: 'fiber', name: '纤维', unit: 'g', precision: 1 }, { key: 'cholesterol', name: '胆固醇', unit: 'mg', precision: 0 }, { key: 'ca', name: '钙', unit: 'mg', precision: 0 },
+            { key: 'vitA', name: '维生素A', unit: 'µg', precision: 0 }, { key: 'vitB1', name: '维生素B1', unit: 'mg', precision: 2 }, { key: 'vitB2', name: '维生素B2', unit: 'mg', precision: 2 }, { key: 'vitB6', name: '维生素B6', unit: 'mg', precision: 2 },
+            { key: 'vitB12', name: '维生素B12', unit: 'µg', precision: 1 }, { key: 'vitC', name: '维生素C', unit: 'mg', precision: 0 }, { key: 'vitD', name: '维生素D', unit: 'µg', precision: 0 }, { key: 'vitE', name: '维生素E', unit: 'mg', precision: 1 },
+            { key: 'niacin', name: '烟酸', unit: 'mg', precision: 1 }, { key: 'phos', name: '磷', unit: 'mg', precision: 0 }, { key: 'k', name: '钾', unit: 'mg', precision: 0 }, { key: 'na', name: '钠', unit: 'mg', precision: 0 },
+            { key: 'mg', name: '镁', unit: 'mg', precision: 0 }, { key: 'fe', name: '铁', unit: 'mg', precision: 1 }, { key: 'zn', name: '锌', unit: 'mg', precision: 1 }, { key: 'se', name: '硒', unit: 'µg', precision: 0 },
+            { key: 'cu', name: '铜', unit: 'µg', precision: 2 }, { key: 'mn', name: '锰', unit: 'mg', precision: 2 }
+        ];
+        const foodDatabase = [
+            { name: "苹果", icon: "fa-solid fa-apple-whole", color: "#FF6347", kcal: 52, p: 0.3, f: 0.2, c: 13.8, fiber: 2.4, ca: 6, fe: 0.1, zn: 0.0, se: 0.1, na: 1, k: 107, energy: Math.round(52 * 4.184), cholesterol: 0, vitA: 54, vitB1: 0.02, vitB2: 0.03, vitB6: 0.04, vitB12: 0, vitC: 4.6, vitD: 0, vitE: 0.18, niacin: 0.09, phos: 11, mg: 5, cu: 0.03, mn: 0.04 },
+            { name: "胡萝卜", icon: "fa-solid fa-carrot", color: "#FFA500", kcal: 41, p: 0.9, f: 0.2, c: 10.0, fiber: 2.8, ca: 33, fe: 0.3, zn: 0.2, se: 0.1, na: 69, k: 320, energy: Math.round(41 * 4.184), cholesterol: 0, vitA: 835, vitB1: 0.07, vitB2: 0.06, vitB6: 0.14, vitB12: 0, vitC: 5.9, vitD: 0, vitE: 0.66, niacin: 0.98, phos: 35, mg: 12, cu: 0.04, mn: 0.14 },
+            { name: "鸡胸肉", icon: "fa-solid fa-drumstick-bite", color: "#D2B48C", kcal: 165, p: 31.0, f: 3.6, c: 0.0, fiber: 0.0, ca: 13, fe: 1.0, zn: 0.8, se: 25.5, na: 74, k: 256, energy: Math.round(165 * 4.184), cholesterol: 85, vitA: 0, vitB1: 0.07, vitB2: 0.09, vitB6: 0.6, vitB12: 0.4, vitC: 0, vitD: 0.1, vitE: 0.13, niacin: 11.4, phos: 228, mg: 29, cu: 0.05, mn: 0.02 },
+            { name: "米饭", icon: "fa-solid fa-bowl-rice", color: "#FFFFE0", kcal: 130, p: 2.7, f: 0.3, c: 28.2, fiber: 0.4, ca: 10, fe: 0.8, zn: 1.1, se: 15.1, na: 1, k: 35, energy: Math.round(130 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.07, vitB2: 0.01, vitB6: 0.16, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.11, niacin: 1.6, phos: 35, mg: 12, cu: 0.07, mn: 0.38 },
+            { name: "牛奶", icon: "fa-solid fa-cow", color: "#ADD8E6", kcal: 42, p: 3.4, f: 1.0, c: 5.0, fiber: 0.0, ca: 125, fe: 0.1, zn: 0.4, se: 3.7, na: 44, k: 150, energy: Math.round(42 * 4.184), cholesterol: 5, vitA: 40, vitB1: 0.04, vitB2: 0.17, vitB6: 0.04, vitB12: 0.45, vitC: 0, vitD: 1.2, vitE: 0.07, niacin: 0.1, phos: 95, mg: 12, cu: 0.01, mn: 0.003 },
+            { name: "鸡蛋", icon: "fa-solid fa-egg", color: "#FFD700", kcal: 155, p: 13.0, f: 11.0, c: 1.1, fiber: 0.0, ca: 50, fe: 1.2, zn: 1.1, se: 30.8, na: 124, k: 126, energy: Math.round(155 * 4.184), cholesterol: 373, vitA: 149, vitB1: 0.03, vitB2: 0.5, vitB6: 0.12, vitB12: 1.1, vitC: 0, vitD: 2.2, vitE: 1.03, niacin: 0.06, phos: 198, mg: 10, cu: 0.07, mn: 0.03 },
+            { name: "柠檬", icon: "fa-solid fa-lemon", color: "#FFFACD", kcal: 29, p: 1.1, f: 0.3, c: 9.3, fiber: 2.8, ca: 26, fe: 0.6, zn: 0.1, se: 0.4, na: 2, k: 138, energy: Math.round(29 * 4.184), cholesterol: 0, vitA: 1, vitB1: 0.04, vitB2: 0.02, vitB6: 0.08, vitB12: 0, vitC: 53, vitD: 0, vitE: 0.15, niacin: 0.1, phos: 16, mg: 8, cu: 0.04, mn: 0.03 },
+            { name: "燕麦片", icon: "fa-solid fa-wheat-awn", color: "#F5F5DC", kcal: 389, p: 16.9, f: 6.9, c: 66.3, fiber: 10.6, ca: 54, fe: 4.7, zn: 4.0, se: 7.5, na: 2, k: 429, energy: Math.round(389 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.76, vitB2: 0.14, vitB6: 0.12, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.63, niacin: 0.96, phos: 523, mg: 177, cu: 0.63, mn: 4.92 },
+            { name: "杏仁", icon: "fa-solid fa-seedling", color: "#A0522D", kcal: 579, p: 21.2, f: 49.9, c: 21.6, fiber: 12.5, ca: 269, fe: 3.7, zn: 3.1, se: 4.1, na: 1, k: 733, energy: Math.round(579 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.21, vitB2: 1.14, vitB6: 0.14, vitB12: 0, vitC: 0, vitD: 0, vitE: 25.63, niacin: 3.6, phos: 481, mg: 270, cu: 1.03, mn: 2.18 },
+            { name: "面包", icon: "fa-solid fa-bread-slice", color: "#DEB887", kcal: 265, p: 13.0, f: 3.3, c: 49.0, fiber: 7.0, ca: 148, fe: 3.6, zn: 1.0, se: 19.0, na: 491, k: 260, energy: Math.round(265 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.45, vitB2: 0.35, vitB6: 0.08, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.2, niacin: 5.0, phos: 150, mg: 40, cu: 0.15, mn: 0.6 },
+            { name: "三文鱼", icon: "fa-solid fa-fish-fins", color: "#FA8072", kcal: 208, p: 20.0, f: 13.0, c: 0.0, fiber: 0.0, ca: 9, fe: 0.3, zn: 0.4, se: 36.5, na: 59, k: 429, energy: Math.round(208 * 4.184), cholesterol: 55, vitA: 15, vitB1: 0.2, vitB2: 0.15, vitB6: 0.65, vitB12: 3.0, vitC: 0, vitD: 10.0, vitE: 1.3, niacin: 8.0, phos: 240, mg: 27, cu: 0.05, mn: 0.02 },
+            { name: "奶酪", icon: "fa-solid fa-cheese", color: "#FFEC8B", kcal: 402, p: 25.0, f: 33.0, c: 1.3, fiber: 0.0, ca: 721, fe: 0.3, zn: 3.1, se: 14.5, na: 621, k: 98, energy: Math.round(402 * 4.184), cholesterol: 105, vitA: 290, vitB1: 0.03, vitB2: 0.38, vitB6: 0.07, vitB12: 1.7, vitC: 0, vitD: 0.6, vitE: 0.2, niacin: 0.1, phos: 512, mg: 28, cu: 0.03, mn: 0.01 },
+        ];
+        let tareTimeout = null;
+        
+        // New long press state variables (from general_weighing.html)
+        let longPressTimer = null; 
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0; 
+        let longPressActive = false; 
+        const LONG_PRESS_RETURN_DURATION = 1000; 
+        const LONG_PRESS_POWER_OFF_DURATION = 5000; 
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        const LONG_PRESS_ACTION_POWER_OFF = 2;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+        // End new long press state variables
+
+        let foodItemElements = [];
+        const units = ['g', 'ml', 'oz', 'lb', 'lb:oz']; 
+        const unitColors = { 'g': 'unit-g', 'ml': 'unit-ml', 'oz': 'unit-oz', 'lb': 'unit-lb', 'lb:oz': 'unit-lb-oz' };
+        let currentUnitIndex = 0;
+        const G_PER_ML = 1.0; const G_PER_OZ = 28.3495; const G_PER_LB = 453.592;
+
+        window.addEventListener('load', () => {
+            // Moved these to the top of the 'load' scope
+            const hintBar = document.getElementById('hint-bar'); 
+            const tareIndicator = document.getElementById('tare-indicator'); 
+            const mainContent = document.getElementById('main-content');
+            const statusPrompt = document.getElementById('status-prompt');
+            const foodSelection = document.getElementById('food-selection');
+            const foodGrid = document.getElementById('food-grid');
+            const nutritionDisplay = document.getElementById('nutrition-display');
+            const weightDisplayNutrition = document.getElementById('weight-display-nutrition');
+            const weightValue = document.getElementById('weight-value');
+            const weightUnit = document.getElementById('weight-unit');
+            const nutrientDetailsContainer = document.getElementById('nutrient-details-container');
+            
+            const btnRotateLeft = document.getElementById('btn-rotate-left');
+            const btnRotateRight = document.getElementById('btn-rotate-right');
+            const btnShortPress = document.getElementById('btn-short-press');
+            const btnLongPress = document.getElementById('btn-long-press');
+            const btnReturnIndex = document.getElementById('btn-return-index');
+            const btnAddWeight = document.getElementById('btn-add-weight');
+            const btnResetWeight = document.getElementById('btn-reset-weight');
+            // btnToggleLanguage removed
+
+            function showTareIndicator() {
+                 if(!tareIndicator) return;
+                 tareIndicator.classList.add('visible');
+                 if (tareTimeout) { clearTimeout(tareTimeout); }
+                 tareTimeout = setTimeout(() => {
+                     if(tareIndicator) tareIndicator.classList.remove('visible');
+                     tareTimeout = null;
+                 }, 1000);
+            }
+
+            function getDecimalPlaces(weight, unit) {
+                if (unit === 'g' || unit === 'ml') {
+                    if (weight < 1000) return 1;
+                    return 0;
+                } else if (unit === 'oz') {
+                    if (weight < 100) return 3;
+                    return 2;
+                } else if (unit === 'lb') {
+                    if (weight < 2) return 4;
+                    return 3;
+                }
+                return 1;
+            }
+
+            function roundToIncrement(value, increment) {
+                return Math.round(value / increment) * increment;
+            }
+
+            function formatWeight(weightInGrams) {
+                const currentUnit = units[currentUnitIndex];
+                
+                if (currentUnit === 'lb:oz') {
+                    const totalOunces = weightInGrams / G_PER_OZ;
+                    const pounds = Math.floor(totalOunces / 16);
+                    const ounces = (totalOunces % 16);
+                    const displayValue = `${pounds}:${(ounces < 0 && ounces > -0.05) ? '0.0' : ounces.toFixed(1)}`;
+                    return { value: displayValue, unit: 'lb:oz' };
+                }
+
+                let convertedWeight;
+                switch(currentUnit) {
+                    case 'lb': convertedWeight = weightInGrams / G_PER_LB; break;
+                    case 'oz': convertedWeight = weightInGrams / G_PER_OZ; break;
+                    case 'ml': convertedWeight = weightInGrams / G_PER_ML; break;
+                    case 'g': default: convertedWeight = weightInGrams; break;
+                }
+
+                const decimalPlaces = getDecimalPlaces(convertedWeight, currentUnit);
+                let adjustedWeight = convertedWeight;
+
+                if (currentUnit === 'oz') {
+                    if (adjustedWeight < 100) adjustedWeight = roundToIncrement(adjustedWeight, 0.005);
+                    else adjustedWeight = roundToIncrement(adjustedWeight, 0.05);
+                } else if (currentUnit === 'lb') {
+                    if (adjustedWeight < 2) adjustedWeight = roundToIncrement(adjustedWeight, 0.0005);
+                    else adjustedWeight = roundToIncrement(adjustedWeight, 0.002);
+                }
+
+                let displayValue;
+                if (Math.abs(convertedWeight) < 0.0001) {
+                    displayValue = (0).toFixed(decimalPlaces);
+                } else if (Math.abs(convertedWeight) < 0.3 && (currentUnit === 'g' || currentUnit === 'ml')) {
+                    if (Math.abs(adjustedWeight) < 0.0001 && decimalPlaces === 1) {
+                       displayValue = '0.0';
+                    } else {
+                       displayValue = adjustedWeight.toFixed(decimalPlaces);
+                    }
+                } else {
+                    displayValue = adjustedWeight.toFixed(decimalPlaces);
+                }
+                
+                if (parseFloat(displayValue) === 0 && displayValue.startsWith('-')) {
+                    displayValue = (0).toFixed(decimalPlaces);
+                }
+
+                return { value: displayValue, unit: currentUnit };
+            }
+
+            function calculateSingleNutrient(nutrientKey, weightGrams) {
+                 if (weightGrams <= 0 || selectedFoodIndex < 0 || selectedFoodIndex >= foodDatabase.length) { return 0; }
+                 const food = foodDatabase[selectedFoodIndex];
+                 const valuePer100g = food[nutrientKey] || 0;
+                 const weightFactor = weightGrams / 100.0;
+                 const calculatedValue = valuePer100g * weightFactor;
+                 const nutrientInfo = nutrients.find(n => n.key === nutrientKey);
+                 const precision = nutrientInfo ? nutrientInfo.precision : 1;
+                 if (nutrientKey === 'kcal' || nutrientKey === 'energy') { return Math.round(calculatedValue); }
+                 else { return parseFloat(calculatedValue.toFixed(precision)); }
+            }
+
+            function populateNutrientDisplays() {
+                const allNutrientsGridEl = document.getElementById('all-nutrients-grid');
+                if (!allNutrientsGridEl) { return; }
+                let allNutrientsHTML = '';
+                nutrients.forEach((nutrient) => {
+                    const value = calculateSingleNutrient(nutrient.key, currentWeight);
+                    allNutrientsHTML += `<div class="nutrient-item">` +
+                                          `<span class="nutrient-name">${nutrient.name}</span>` +
+                                          `<span class="nutrient-value">${value}<span class="nutrient-unit">${nutrient.unit}</span></span>` +
+                                        `</div>`;
+                });
+                allNutrientsGridEl.innerHTML = allNutrientsHTML;
+            }
+
+            function updateUI() {
+                if (!mainContent || !statusPrompt || !foodSelection || !nutritionDisplay || !hintBar || !foodGrid || !weightDisplayNutrition || !nutrientDetailsContainer || !btnAddWeight || !btnResetWeight) { return; }
+                const isWeighing = currentWeight > 0.05;
+                foodSelection.classList.toggle('hidden', isFoodConfirmed);
+                nutritionDisplay.classList.toggle('hidden', !isFoodConfirmed);
+                mainContent.classList.add('center-content'); mainContent.classList.remove('align-end');
+                let promptText = ''; let hintTextVal = ''; let shortPressAction = ''; let enableRotation = true;
+
+                if (isFoodConfirmed) {
+                    const food = foodDatabase[selectedFoodIndex];
+                    promptText = `${food.name}`;
+                    const formattedWeight = formatWeight(currentWeight);
+                    if (weightValue) weightValue.textContent = formattedWeight.value;
+                    if (weightUnit) { weightUnit.textContent = formattedWeight.unit; weightUnit.className = 'weight-unit'; if (unitColors[formattedWeight.unit]) { weightUnit.classList.add(unitColors[formattedWeight.unit]); }}
+                    populateNutrientDisplays();
+                    hintTextVal = isWeighing ? "旋转查看更多 | 短按去皮" : "旋转切换单位｜短按去皮";
+                    shortPressAction = 'TARE';
+                } else {
+                    promptText = "选择食物";
+                    const pageSize = 6;
+                    const indexOnPage = selectedFoodIndex % pageSize;
+                    foodItemElements.forEach((item, index) => {
+                        if(item) item.classList.toggle('selected', index === indexOnPage);
+                    });
+                    hintTextVal = "旋转选择 | 短按确认";
+                    shortPressAction = '确认食物';
+                }
+                statusPrompt.textContent = promptText;
+                if (!longPressActive && hintBar) hintBar.textContent = hintTextVal; // Only update if not long pressing
+                if (btnShortPress) btnShortPress.textContent = `${shortPressAction} (短按)`;
+                if (btnRotateLeft) btnRotateLeft.disabled = !enableRotation;
+                if (btnRotateRight) btnRotateRight.disabled = !enableRotation;
+                if (btnAddWeight) btnAddWeight.disabled = !isFoodConfirmed;
+                if (btnResetWeight) btnResetWeight.disabled = !isFoodConfirmed || !isWeighing;
+            }
+
+            function generateFoodGrid() {
+                 if (!foodGrid) return; foodGrid.innerHTML = ''; foodItemElements = [];
+                 const pageSize = 6;
+                 const currentPage = Math.floor(selectedFoodIndex / pageSize);
+                 const start = currentPage * pageSize;
+                 const end = start + pageSize;
+                 const itemsToDisplay = foodDatabase.slice(start, end);
+
+                 itemsToDisplay.forEach((food) => {
+                      const item = document.createElement('div');
+                      item.classList.add('food-item');
+                      const nameSpan = document.createElement('span');
+                      nameSpan.textContent = food.name;
+                      item.appendChild(nameSpan);
+                      foodGrid.appendChild(item);
+                      foodItemElements.push(item);
+                 });
+            }
+            
+            function resetScale() { currentWeight = 0.0; isFoodConfirmed = false; selectedFoodIndex = 0; currentUnitIndex = 0; if(nutrientDetailsContainer) nutrientDetailsContainer.scrollTop = 0; updateUI(); }
+            function simulateAddWeight() { if (isFoodConfirmed) { currentWeight += Math.random() * 200 + 50; updateUI(); } }
+            function simulateResetWeight() { if (isFoodConfirmed) { currentWeight = 0.0; updateUI(); } }
+
+            function handleShortPress() {
+                 if (isFoodConfirmed) { showTareIndicator(); currentWeight = 0.0; updateUI(); } 
+                 else { isFoodConfirmed = true; currentWeight = 0.0; currentUnitIndex = 0; updateUI(); }
+            }
+            function handleRotate(direction) {
+                 if (isFoodConfirmed) {
+                     const isWeighing = currentWeight > 0.05;
+                     if (isWeighing && nutrientDetailsContainer) { nutrientDetailsContainer.scrollBy({ top: direction * nutrientDetailsContainer.clientHeight * 0.6, behavior: 'smooth' }); } 
+                     else { currentUnitIndex = (currentUnitIndex + direction + units.length) % units.length; updateUI(); }
+                 } else {
+                     const oldIndex = selectedFoodIndex;
+                     selectedFoodIndex = (selectedFoodIndex + direction + foodDatabase.length) % foodDatabase.length;
+                     const pageSize = 6;
+                     const oldPage = Math.floor(oldIndex / pageSize);
+                     const newPage = Math.floor(selectedFoodIndex / pageSize);
+                     if (oldPage !== newPage) {
+                         generateFoodGrid();
+                     }
+                     updateUI();
+                 }
+            }
+
+            // --- New Long Press Logic (from general_weighing.html) ---
+            function simulateDirectPowerOff() {
+                console.log("Simulating Direct Power Off - Black Screen");
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) { deviceScreen.innerHTML = ''; deviceScreen.style.backgroundColor = '#000000'; }
+                if (longPressActive && longPressTimer) { cancelAnimationFrame(longPressTimer); longPressTimer = null; longPressActive = false; }
+            }
+
+            function disableAllButtons() { 
+                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex, btnAddWeight, btnResetWeight].forEach(btn => { if(btn) btn.disabled = true; }); 
+            }
+
+            function startLongPress() {
+                if (longPressActive) return;
+                longPressActive = true; longPressStartTime = Date.now(); currentLongPressDuration = 0; currentLongPressAction = LONG_PRESS_ACTION_NONE;
+                if (hintBar) { hintBar.classList.add('long-press-active'); }
+                updateLongPressHintText(); 
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintLoop() {
+                if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() { 
+                currentLongPressDuration = Date.now() - longPressStartTime;
+                let remainingSecondsForPowerOff;
+                if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                    remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                    if (hintBar) { hintBar.innerHTML = `长按<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>后将关机，现在松开旋钮返回上一级菜单`; }
+                    currentLongPressAction = (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_NONE : LONG_PRESS_ACTION_RETURN;
+                } else { 
+                    if (longPressActive) { simulateDirectPowerOff(); }
+                    return; 
+                }
+            }
+
+            function cancelLongPress() {
+                if (!longPressActive) return;
+                longPressActive = false; if (longPressTimer) { cancelAnimationFrame(longPressTimer); longPressTimer = null; }
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                    // Restore original hint text based on current UI state
+                    const isWeighing = currentWeight > 0.05;
+                    if (isFoodConfirmed) { hintBar.textContent = isWeighing ? "旋转来向下滚动查看, 短按去皮" : "请放置食物称重,左右旋转切换单位"; } 
+                    else { hintBar.textContent = "旋转选择食物, 短按确认"; }
+                }
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { window.location.href = 'main_menu.html'; } 
+                else if (currentLongPressAction === LONG_PRESS_ACTION_NONE) { console.log("Long press cancelled (不足1秒)."); }
+                currentLongPressDuration = 0; currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            }
+            // --- End New Long Press Logic ---
+
+            if(btnRotateLeft) btnRotateLeft.addEventListener('click', () => handleRotate(-1));
+            if(btnRotateRight) btnRotateRight.addEventListener('click', () => handleRotate(1));
+            if(btnShortPress) btnShortPress.addEventListener('click', handleShortPress);
+            if(btnLongPress) { btnLongPress.addEventListener('mousedown', startLongPress); btnLongPress.addEventListener('mouseup', cancelLongPress); btnLongPress.addEventListener('mouseleave', cancelLongPress); }
+            if(btnReturnIndex) btnReturnIndex.addEventListener('click', () => { window.location.href = 'index.html'; });
+            if(btnAddWeight) btnAddWeight.addEventListener('click', simulateAddWeight);
+            if(btnResetWeight) btnResetWeight.addEventListener('click', resetScale);
+
+            // btnToggleLanguage event listener removed
+
+            generateFoodGrid();
+            updateUI(); 
+        });
+    </script>
+
+</body>
+</html>

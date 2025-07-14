@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>充电状态 - 智能食物秤 Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Status Bar */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 36px; position: relative; }
+        .status-bar i { font-size: 18px; color: #e0e0e0; line-height: 1; }
+        #status-prompt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 15px; color: #a0a0a0; white-space: nowrap; max-width: calc(100% - 120px); /* Adjusted for battery icon */ overflow: hidden; text-overflow: ellipsis; }
+        
+        .battery-icon-container { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+        .battery-icon .fa-bolt { 
+            font-size: 0.6em; 
+            color: #34d399; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .battery-icon.charging .fa-bolt {
+            opacity: 1;
+        }
+        /* Change battery outline color when charging */
+        .battery-icon.charging.fa-battery-empty,
+        .battery-icon.charging.fa-battery-quarter,
+        .battery-icon.charging.fa-battery-half,
+        .battery-icon.charging.fa-battery-three-quarters,
+        .battery-icon.charging.fa-battery-full {
+            color: #34d399; 
+        }
+
+
+        /* Main Content Area - General Weighing UI */
+        .main-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            position: relative;
+        }
+        .weight-unit-block { display: flex; flex-direction: row; align-items: baseline; justify-content: center; gap: 20px; position: relative; }
+        .weight-display { font-size: 110px; font-weight: 700; line-height: 1; color: #ffffff; text-align: right; margin: 0; padding: 0; position: relative; }
+        .unit-display { font-size: 45px; font-weight: 500; color: #a0a0a0; transition: color 0.3s ease; line-height: 1; margin: 0; padding: 0; position: relative; transform: translateY(-4px); }
+        .unit-g { color: #60a5fa; } .unit-ml { color: #34d399; } .unit-oz { color: #fbbf24; } .unit-lb { color: #f87171; }
+        .tare-indicator { position: absolute; top: 20px; transform: translateY(-50%); left: 15px; background-color: #007AFF; color: white; padding: 3px 8px; border-radius: 5px; font-size: 14px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease-out; z-index: 5; white-space: nowrap; }
+        .tare-indicator.visible { opacity: 1; }
+
+
+        /* Hint Bar */
+        .hint-bar { text-align: center; padding: 8px 10px 12px 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: 36px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Overlays (Pop-ups) */
+        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease; text-align: center; padding: 20px; }
+        .overlay.visible { opacity: 1; visibility: visible; }
+        .overlay-icon { font-size: 48px; margin-bottom: 1rem; }
+        .overlay-title { font-size: 22px; font-weight: 600; margin-bottom: 0.5rem; }
+        .overlay-message { font-size: 16px; color: #d0d0d0; }
+
+        /* Interaction Controls Styles */
+        .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .control-button { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; background-color: #4f46e5; color: white; border: none; border-radius: 0.375rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-button:hover { background-color: #4338ca; }
+        .control-button:active { transform: scale(0.95); }
+        .control-button.secondary { background-color: #64748b; }
+        .control-button.secondary:hover { background-color: #475569; }
+        .control-button.success { background-color: #22c55e; }
+        .control-button.success:hover { background-color: #16a34a; }
+        .control-button.danger { background-color: #ef4444; }
+        .control-button.danger:hover { background-color: #dc2626; }
+        .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div class="device-screen">
+        <div class="status-bar">
+            <i class="fa-brands fa-bluetooth-b"></i>
+            <span id="status-prompt"></span> 
+            <div class="battery-icon-container">
+                <i id="battery-icon" class="fa-solid fa-battery-half battery-icon">
+                    <i class="fa-solid fa-bolt"></i> </i>
+            </div>
+        </div>
+
+        <div id="main-content" class="main-content">
+            <div id="tare-indicator" class="tare-indicator">TARE</div>
+            <div class="weight-unit-block">
+                 <div id="weight-display" class="weight-display">168.8</div>
+                 <div id="unit-display" class="unit-display">g</div>
+            </div>
+        </div>
+
+        <div id="hint-bar" class="hint-bar">
+            左右旋转切换单位 , 短按“TARE”去皮
+        </div>
+
+        <div id="charging-connected-screen" class="overlay" style="background-color: #1a1a1a; color: white; padding: 20px; border-radius: 0px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <i class="fas fa-charging-station overlay-icon" style="color: #34d399; font-size: 60px; margin-bottom: 20px;"></i>
+            <h3 class="overlay-title" style="font-size: 28px; margin-bottom: 10px;">已连接充电器</h3>
+            <p class="overlay-message" style="font-size: 18px; margin-bottom: 30px;">设备正在充电中。</p>
+        </div>
+
+        <div id="charging-disconnected-screen" class="overlay" style="background-color: #1a1a1a; color: white; padding: 20px; border-radius: 0px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <i class="fas fa-plug-circle-xmark overlay-icon" style="color: #f87171; font-size: 60px; margin-bottom: 20px;"></i>
+            <h3 class="overlay-title" style="font-size: 28px; margin-bottom: 10px;">已断开充电器</h3>
+            <p class="overlay-message" style="font-size: 18px; margin-bottom: 30px;">设备停止充电。</p>
+        </div>
+
+    </div>
+
+    <div class="interaction-controls">
+        <button id="btn-toggle-charger" class="control-button success">模拟连接充电器</button>
+        <button id="btn-return-index" class="control-button secondary">返回目录</button>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const statusBar = document.querySelector('.status-bar'); // Added
+        const statusPrompt = document.getElementById('status-prompt');
+        const batteryIcon = document.getElementById('battery-icon'); // This is the main battery icon (e.g., fa-battery-half)
+        const hintBar = document.getElementById('hint-bar');
+        const chargingConnectedScreen = document.getElementById('charging-connected-screen'); // Renamed
+        const chargingDisconnectedScreen = document.getElementById('charging-disconnected-screen'); // Renamed
+        const mainContent = document.getElementById('main-content'); // Added
+        const weightDisplay = document.getElementById('weight-display'); // From general weighing
+        const unitDisplay = document.getElementById('unit-display');     // From general weighing
+        const tareIndicator = document.getElementById('tare-indicator'); // From general weighing
+
+
+        const btnToggleCharger = document.getElementById('btn-toggle-charger');
+        const btnReturnIndex = document.getElementById('btn-return-index');
+        // btnToggleLanguage removed
+
+        // --- State Variables ---
+        let isCharging = false;
+        let currentBatteryPercentage = 50; // Initial battery level for simulation
+        let chargeInterval = null;
+
+        // --- General Weighing State (Simplified for background) ---
+        let currentWeight = 168.8;
+        const units = ['g', 'ml', 'oz', 'lb'];
+        const unitColors = { 'g': 'unit-g', 'ml': 'unit-ml', 'oz': 'unit-oz', 'lb': 'unit-lb'};
+        let currentUnitIndex = 0;
+        let tareTimeout = null;
+
+
+        // --- General Weighing Functions (Simplified) ---
+        function formatDisplayWeight(weightVal, unitStr) {
+            let displayValue;
+            if (unitStr === 'g' || unitStr === 'ml') {
+                displayValue = weightVal.toFixed(1);
+            } else if (unitStr === 'oz') {
+                displayValue = (weightVal / 28.3495).toFixed(2);
+            } else if (unitStr === 'lb') {
+                displayValue = (weightVal / 453.592).toFixed(3);
+            } else {
+                displayValue = weightVal.toFixed(1);
+            }
+            if (Math.abs(parseFloat(displayValue)) < 0.05 && (unitStr === 'g' || unitStr === 'ml')) {
+                return '0.0';
+            }
+            return displayValue;
+        }
+
+        function updateWeighingDisplay() {
+            if (!weightDisplay || !unitDisplay) return;
+            const currentUnit = units[currentUnitIndex];
+            weightDisplay.textContent = formatDisplayWeight(currentWeight, currentUnit);
+            unitDisplay.textContent = currentUnit;
+            unitDisplay.className = 'unit-display';
+            if (unitColors[currentUnit]) {
+                unitDisplay.classList.add(unitColors[currentUnit]);
+            }
+        }
+
+
+        // --- Charging Simulation Functions ---
+        function showFullScreenOverlay(overlayElement) { // Renamed from showPopup
+            if (!overlayElement) return;
+            // Hide main UI elements
+            if (statusBar) statusBar.style.display = 'none';
+            if (mainContent) mainContent.style.display = 'none';
+            if (hintBar) hintBar.style.display = 'none';
+            
+            overlayElement.classList.add('visible');
+        }
+
+        function hideFullScreenOverlay(overlayElement) { // New function
+            if (!overlayElement) return;
+            overlayElement.classList.remove('visible');
+
+            // Restore main UI elements
+            if (statusBar) statusBar.style.display = 'flex';
+            if (mainContent) mainContent.style.display = 'flex';
+            if (hintBar) hintBar.style.display = 'block'; // Or 'flex' if it's a flex container
+        }
+
+        function updateBatteryVisualAndStatus(isInitialCall = false) { // Added isInitialCall
+            if (!batteryIcon) return;
+
+            // Update icon based on percentage
+            batteryIcon.classList.remove('fa-battery-empty', 'fa-battery-quarter', 'fa-battery-half', 'fa-battery-three-quarters', 'fa-battery-full');
+            if (currentBatteryPercentage <= 5) {
+                batteryIcon.classList.add('fa-battery-empty');
+            } else if (currentBatteryPercentage <= 35) {
+                batteryIcon.classList.add('fa-battery-quarter');
+            } else if (currentBatteryPercentage <= 65) {
+                batteryIcon.classList.add('fa-battery-half');
+            } else if (currentBatteryPercentage <= 95) {
+                batteryIcon.classList.add('fa-battery-three-quarters');
+            } else {
+                batteryIcon.classList.add('fa-battery-full');
+            }
+
+            // Handle charging state visual for the icon and status prompt
+            if (isCharging) {
+                batteryIcon.classList.add('charging'); // Ensures .charging class is present for bolt visibility via CSS
+
+                // Change battery icon fill level based on percentage
+                batteryIcon.classList.remove('fa-battery-empty', 'fa-battery-quarter', 'fa-battery-half', 'fa-battery-three-quarters', 'fa-battery-full');
+                if (currentBatteryPercentage <= 5) batteryIcon.classList.add('fa-battery-empty');
+                else if (currentBatteryPercentage <= 35) batteryIcon.classList.add('fa-battery-quarter');
+                else if (currentBatteryPercentage <= 65) batteryIcon.classList.add('fa-battery-half');
+                else if (currentBatteryPercentage < 100) batteryIcon.classList.add('fa-battery-three-quarters'); // Use three-quarters up to 99%
+                else batteryIcon.classList.add('fa-battery-full'); // Full at 100%
+
+                if (currentBatteryPercentage === 100) {
+                    // When 100% and charging, icon is full, green, and bolt is visible (due to .charging class)
+                    // No text change on status/hint bar
+                } else {
+                    // Charging, but not full. Icon shows level, green, and bolt.
+                    // No text change on status/hint bar.
+                }
+                 // Ensure statusPrompt and hintBar are at their defaults when no overlay is visible
+                if (!chargingConnectedScreen.classList.contains('visible') && !chargingDisconnectedScreen.classList.contains('visible')) {
+                    if (statusPrompt) statusPrompt.textContent = ""; 
+                    if (hintBar) hintBar.textContent = "左右旋转切换单位 , 短按“TARE”去皮";
+                }
+
+            } else { // Not charging (isCharging is false)
+                batteryIcon.classList.remove('charging'); // Hide bolt
+                // Icon color reverts to default (handled by removing .charging or could be explicit)
+                // Icon fill level remains based on currentBatteryPercentage
+                batteryIcon.style.color = '#e0e0e0'; // Explicitly set to default color when not charging
+
+                 // Ensure statusPrompt and hintBar are at their defaults when not charging and no overlay is visible
+                if (!chargingConnectedScreen.classList.contains('visible') && !chargingDisconnectedScreen.classList.contains('visible')) {
+                    if (statusPrompt) statusPrompt.textContent = ""; 
+                    if (hintBar) hintBar.textContent = "左右旋转切换单位 , 短按“TARE”去皮";
+                }
+            }
+        }
+
+
+        function toggleCharger() {
+            isCharging = !isCharging;
+
+            if (isCharging) {
+                console.log("Charger Connected");
+                showFullScreenOverlay(chargingConnectedScreen);
+                setTimeout(() => {
+                    hideFullScreenOverlay(chargingConnectedScreen);
+                    updateBatteryVisualAndStatus(); // Update status/hint after overlay hides
+                }, 1000); // Show for 1 second
+
+                btnToggleCharger.textContent = "模拟断开充电器";
+                btnToggleCharger.classList.remove('success');
+                btnToggleCharger.classList.add('danger');
+
+                if (chargeInterval) clearInterval(chargeInterval);
+                chargeInterval = setInterval(() => {
+                    if (currentBatteryPercentage < 100) {
+                        currentBatteryPercentage += 10; // Increase by 10%
+                        if (currentBatteryPercentage > 100) currentBatteryPercentage = 100;
+                    } else { // Battery is full
+                        clearInterval(chargeInterval);
+                        chargeInterval = null;
+                    }
+                    updateBatteryVisualAndStatus(); // Update visuals during charging progress
+                }, 1500); // Interval of 1.5 seconds
+
+            } else {
+                console.log("Charger Disconnected");
+                showFullScreenOverlay(chargingDisconnectedScreen);
+                 setTimeout(() => {
+                    hideFullScreenOverlay(chargingDisconnectedScreen);
+                    updateBatteryVisualAndStatus(); // Update status/hint after overlay hides
+                }, 1000); // Show for 1 second
+
+                btnToggleCharger.textContent = "模拟连接充电器";
+                btnToggleCharger.classList.remove('danger');
+                btnToggleCharger.classList.add('success');
+                if (chargeInterval) {
+                    clearInterval(chargeInterval);
+                    chargeInterval = null;
+                }
+                batteryIcon.style.color = '#e0e0e0'; // Revert icon color to default
+                // updateBatteryVisualAndStatus will handle the text and icon state
+            }
+            // Initial updateBatteryVisualAndStatus call after isCharging toggled,
+            // but before overlay timeout, so text might not be immediately visible.
+            // The one inside setTimeout for hideFullScreenOverlay is more important for text.
+            updateBatteryVisualAndStatus(); 
+        }
+
+        // --- Event Listeners ---
+        if (btnToggleCharger) {
+            btnToggleCharger.addEventListener('click', toggleCharger);
+        }
+        if (btnReturnIndex) {
+            btnReturnIndex.addEventListener('click', () => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        // btnToggleLanguage event listener removed
+
+        // --- Initial Setup ---
+        updateWeighingDisplay(); // Show the initial weighing screen
+        updateBatteryVisualAndStatus(true); // Set initial battery display and status prompt, pass true for initial call
+
+    </script>
+
+</body>
+</html>
