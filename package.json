@@ -4,6 +4,7 @@
   "description": "智能食物秤Pro交互原型项目",
   "scripts": {
     "setup-figma": "./setup-figma.sh",
+    "setup-device-design": "./setup-device-design.sh",
     "start-figma": "cd mcp-figma && npm start",
     "dev-figma": "cd mcp-figma && npm run dev",
     "test-figma": "./test-figma.sh",
