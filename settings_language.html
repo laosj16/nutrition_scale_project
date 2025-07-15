@@ -76,6 +76,9 @@
             background: rgba(0, 0, 0, 0.3);
             flex-shrink: 0;
         }
+        .hint-bar.long-press-active { color: #ffffff; /* White text during long press */ }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
 
         /* Interaction Controls Styles */
         .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
@@ -162,14 +165,116 @@
         document.getElementById('btn-short-press').addEventListener('click', confirmSelection);
         document.getElementById('btn-return-index').addEventListener('click', () => { window.location.href = 'index.html'; });
 
+        // --- Long Press Variables ---
         let longPressTimer = null;
-        document.getElementById('btn-long-press').addEventListener('mousedown', () => {
-            longPressTimer = setTimeout(() => {
+        let longPressStartTime = 0;
+        let longPressActive = false;
+        let currentLongPressDuration = 0;
+
+        const LONG_PRESS_RETURN_DURATION = 1000; // 1 second to trigger return
+        const LONG_PRESS_POWER_OFF_DURATION = 5000; // 5 seconds to trigger power off
+
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        const LONG_PRESS_ACTION_POWER_OFF = 2;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+        // --- Long Press Logic ---
+        function simulateDirectPowerOff() {
+            console.log("Simulating Direct Power Off - Black Screen");
+            disableAllButtons();
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = ''; // Remove all content
+                deviceScreen.style.backgroundColor = '#000000'; // Set background to black
+            }
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+                longPressActive = false;
+            }
+        }
+
+        function disableAllButtons() {
+            const buttons = ['btn-rotate-left', 'btn-rotate-right', 'btn-short-press', 'btn-long-press', 'btn-return-index'];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if(btn) btn.disabled = true;
+            });
+        }
+
+        function startLongPress() {
+            if (longPressActive) return;
+            longPressActive = true;
+            longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+            const hintBar = document.getElementById('hintBar');
+            if (hintBar) {
+                hintBar.classList.add('long-press-active'); 
+            }
+            
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintText() { 
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            let remainingSecondsForPowerOff;
+
+            if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                const hintBar = document.getElementById('hintBar');
+                if (hintBar) {
+                    hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
+                }
+                if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
+                    currentLongPressAction = LONG_PRESS_ACTION_NONE; 
+                } else {
+                    currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
+                }
+            } else {
+                if (longPressActive) {
+                    simulateDirectPowerOff(); 
+                }
+                return;
+            }
+        }
+
+        function cancelLongPress() {
+            if (!longPressActive) return;
+            longPressActive = false;
+            if (longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+            }
+
+            const hintBar = document.getElementById('hintBar');
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+                hintBar.textContent = "旋转选择 | 短按确认"; 
+            }
+
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
+                console.log("Executing Return Action (返回上一级菜单)...");
                 window.location.href = 'settings_menu.html';
-            }, 1000);
-        });
-        document.getElementById('btn-long-press').addEventListener('mouseup', () => clearTimeout(longPressTimer));
-        document.getElementById('btn-long-press').addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+            } else { 
+                console.log("Long press cancelled (不足1秒).");
+            }
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+        }
+
+        document.getElementById('btn-long-press').addEventListener('mousedown', startLongPress);
+        document.getElementById('btn-long-press').addEventListener('mouseup', cancelLongPress);
+        document.getElementById('btn-long-press').addEventListener('mouseleave', cancelLongPress);
 
         document.addEventListener('DOMContentLoaded', initPage);
     </script>

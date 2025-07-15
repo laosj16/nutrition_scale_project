@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>倒计时模式 - 智能食物秤 Pro</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base styles */
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
+        .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        /* Status Bar */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 36px; position: relative; }
+        .status-bar i { font-size: 18px; color: #e0e0e0; line-height: 1; }
+        #status-prompt { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 15px; color: #a0a0a0; white-space: nowrap; max-width: calc(100% - 80px); overflow: hidden; text-overflow: ellipsis; }
+
+        /* Main Content Area */
+        .main-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            width: 100%;
+        }
+
+        /* Timer Display */
+        .timer-display {
+            font-family: 'Courier Prime', monospace;
+            font-size: 96px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1;
+            letter-spacing: 3px;
+            cursor: default;
+            padding: 10px 0;
+            transition: color 0.3s ease;
+        }
+        .timer-display .editable {
+            border-bottom: 3px solid #007AFF;
+            padding-bottom: 2px;
+            margin: 0 1px;
+        }
+        .timer-display.paused { color: #a0a0a0; }
+        .timer-display.timer-warning { animation: pulse-warning 1s infinite; }
+        .timer-display.timer-finished-red { color: #ff3b30; animation: pulse-red-finish 1.5s infinite; }
+         @keyframes pulse-warning { 0%, 100% { color: #facc15; } 50% { color: #ffffff; } }
+         @keyframes pulse-red-finish { 0%, 100% { opacity: 1; color: #ff3b30;} 50% { opacity: 0.7; color: #ff6b6b;} }
+
+        /* Hint Bar */
+        .hint-bar { 
+            text-align: center; 
+            padding: 8px 10px 12px 10px; 
+            background-color: rgba(0, 0, 0, 0.3); 
+            font-size: 15px; 
+            color: #b0b0b0; 
+            flex-shrink: 0; 
+            height: 36px; 
+            line-height: 20px; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+        .hint-bar.long-press-active {
+            color: #ffffff; /* White text during long press */
+        }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
+
+        /* TARE Indicator - Hidden */
+        .tare-indicator { display: none !important; }
+
+        /* Interaction Controls Styles */
+        .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .control-button { padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; background-color: #4f46e5; color: white; border: none; border-radius: 0.375rem; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .control-button:hover { background-color: #4338ca; }
+        .control-button:active { transform: scale(0.95); }
+        .control-button.secondary { background-color: #64748b; }
+        .control-button.secondary:hover { background-color: #475569; }
+        .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+    <div class="device-screen">
+        <div class="status-bar">
+            <i class="fa-brands fa-bluetooth-b"></i>
+            <span id="status-prompt">设置倒计时</span>
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+
+        <div id="main-content" class="main-content">
+            <div id="timer-display" class="timer-display">
+                <span id="minutes-display" class="editable">00</span>:<span id="seconds-display">00</span>
+            </div>
+        </div>
+
+        <div id="hint-bar" class="hint-bar"></div>
+    </div>
+
+    <div class="interaction-controls">
+        <button id="btn-rotate-left" class="control-button" title="模拟向左旋转">← 旋转</button>
+        <button id="btn-rotate-right" class="control-button" title="模拟向右旋转">旋转 →</button>
+        <button id="btn-short-press" class="control-button" title="模拟短按">确认</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
+        <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
+    </div>
+
+    <script>
+        // --- State Variables ---
+        const State = { SETTING_MINUTES: 'SETTING_MINUTES', SETTING_SECONDS: 'SETTING_SECONDS', RUNNING: 'RUNNING', PAUSED: 'PAUSED', FINISHED: 'FINISHED' };
+        let currentState = State.SETTING_MINUTES;
+        let setMinutes = 0; let setSeconds = 0; let remainingSeconds = 0;
+        let timerInterval = null;
+        
+        // Long press variables (Power_off.html style)
+        let longPressTimer = null; // Used for requestAnimationFrame
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0; // Tracks how long the button has been pressed
+        let longPressActive = false; // Is a long press currently in progress?
+
+        const LONG_PRESS_RETURN_DURATION = 1000; // 1 second to trigger return
+        const LONG_PRESS_POWER_OFF_DURATION = 5000; // 5 seconds to trigger power off
+
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        const LONG_PRESS_ACTION_POWER_OFF = 2;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+        // --- DOM Elements & Function Definitions (Inside 'load' event) ---
+        window.addEventListener('load', () => {
+            // --- DOM Element Selection ---
+            const mainContent = document.getElementById('main-content');
+            const statusPrompt = document.getElementById('status-prompt');
+            const timerDisplay = document.getElementById('timer-display');
+            const minutesDisplay = document.getElementById('minutes-display');
+            const secondsDisplay = document.getElementById('seconds-display');
+            const hintBar = document.getElementById('hint-bar');
+            const btnRotateLeft = document.getElementById('btn-rotate-left');
+            const btnRotateRight = document.getElementById('btn-rotate-right');
+            const btnShortPress = document.getElementById('btn-short-press');
+            const btnLongPress = document.getElementById('btn-long-press');
+            const btnReturnIndex = document.getElementById('btn-return-index');
+
+            // --- Function Definitions ---
+            function formatTime(totalSeconds) {
+                 const mins = Math.floor(totalSeconds / 60); const secs = totalSeconds % 60;
+                 return { minutes: String(mins).padStart(2, '0'), seconds: String(secs).padStart(2, '0') };
+            }
+
+            function startCountdown() {
+                 if (timerInterval) return;
+                 remainingSeconds = setMinutes * 60 + setSeconds;
+                 if (remainingSeconds <= 0) return;
+
+                 setState(State.RUNNING); // Set state first
+                 startCountdownInternal(); // Start the interval
+            }
+
+            function pauseCountdown() {
+                 if (timerInterval) {
+                     clearInterval(timerInterval);
+                     timerInterval = null;
+                     setState(State.PAUSED);
+                 }
+            }
+
+            function resumeCountdown() {
+                if (!timerInterval && currentState === State.PAUSED && remainingSeconds > 0) {
+                    setState(State.RUNNING); // Set state first
+                    startCountdownInternal(); // Start interval
+                }
+            }
+
+             function startCountdownInternal() {
+                 if (timerInterval) return; // Prevent multiple intervals
+                 // Ensure visual state is correct when starting/resuming
+                 timerDisplay.classList.remove('timer-finished-red', 'timer-warning', 'paused');
+                 timerInterval = setInterval(() => {
+                     remainingSeconds--;
+                     // Warning class logic removed
+                     timerDisplay.classList.remove('timer-warning'); // Ensure warning is always removed if it was somehow added
+                     
+                     // Update displayed time
+                     const { minutes, seconds } = formatTime(remainingSeconds);
+                     minutesDisplay.textContent = minutes;
+                     secondsDisplay.textContent = seconds;
+
+                     if (remainingSeconds <= 0) {
+                         stopCountdown(true); // Stop and mark as finished
+                     }
+                 }, 1000);
+             }
+
+
+            function stopCountdown(finished = false) {
+                 if (timerInterval) {
+                     clearInterval(timerInterval);
+                     timerInterval = null;
+                 }
+                 if (finished) {
+                     timerDisplay.classList.remove('timer-warning');
+                     timerDisplay.classList.add('timer-finished-red');
+                     setState(State.FINISHED); // Set state AFTER visual update
+                     console.log("Timer Finished!");
+                 }
+                 // No automatic reset if stopped manually
+            }
+
+            function resetTimer() {
+                stopCountdown(false); // Stop timer if running
+                setMinutes = 0; setSeconds = 0; remainingSeconds = 0;
+                if(timerDisplay) timerDisplay.classList.remove('paused', 'timer-warning', 'timer-finished-red');
+                setState(State.SETTING_MINUTES); // Go back to setting minutes
+            }
+
+            function updateUI() {
+                if (!mainContent || !statusPrompt || !timerDisplay || !hintBar || !minutesDisplay || !secondsDisplay) {
+                    console.error("DOM elements missing in updateUI"); return;
+                }
+
+                let displayMins, displaySecs;
+                let promptText = ''; let hintTextVal = ''; let shortPressAction = '';
+                let enableRotation = false; let shortPressEnabled = true;
+
+                // Clear visual state classes that might persist incorrectly
+                timerDisplay.classList.remove('paused', 'timer-warning', 'timer-finished-red');
+                minutesDisplay.classList.remove('editable');
+                secondsDisplay.classList.remove('editable');
+
+
+                switch (currentState) {
+                    case State.SETTING_MINUTES:
+                        promptText = "设置分钟"; hintTextVal = "旋转调整分钟 | 短按确认"; shortPressAction = '确认分钟'; enableRotation = true;
+                        displayMins = String(setMinutes).padStart(2, '0');
+                        displaySecs = String(setSeconds).padStart(2, '0');
+                        minutesDisplay.classList.add('editable');
+                        break;
+                    case State.SETTING_SECONDS:
+                        promptText = "设置秒钟"; hintTextVal = "旋转调整秒钟 | 短按确认"; shortPressAction = '开始计时'; enableRotation = true;
+                        displayMins = String(setMinutes).padStart(2, '0');
+                        displaySecs = String(setSeconds).padStart(2, '0');
+                        secondsDisplay.classList.add('editable');
+                        break;
+                    case State.RUNNING:
+                        promptText = "倒计时中..."; hintTextVal = "短按暂停"; shortPressAction = '暂停'; enableRotation = false;
+                        ({ minutes: displayMins, seconds: displaySecs } = formatTime(remainingSeconds));
+                        if (remainingSeconds <= 5 && remainingSeconds > 0) {
+                           timerDisplay.classList.add('timer-warning');
+                        }
+                        break;
+                    case State.PAUSED:
+                        promptText = "已暂停"; hintTextVal = "短按继续";
+                        shortPressAction = '继续'; enableRotation = false;
+                        ({ minutes: displayMins, seconds: displaySecs } = formatTime(remainingSeconds));
+                        timerDisplay.classList.add('paused');
+                        break;
+                    case State.FINISHED:
+                        promptText = "时间到!"; hintTextVal = "短按复位"; shortPressAction = '复位'; enableRotation = false;
+                        displayMins = "00"; displaySecs = "00";
+                        timerDisplay.classList.add('timer-finished-red');
+                        break;
+                }
+
+                minutesDisplay.textContent = displayMins;
+                secondsDisplay.textContent = displaySecs;
+                statusPrompt.textContent = promptText;
+                hintBar.textContent = hintTextVal;
+                if (btnShortPress) btnShortPress.textContent = `${shortPressAction} (短按)`;
+                if (btnShortPress) btnShortPress.disabled = !shortPressEnabled;
+                if (btnRotateLeft) btnRotateLeft.disabled = !enableRotation;
+                if (btnRotateRight) btnRotateRight.disabled = !enableRotation;
+            }
+
+            function setState(newState) {
+                 console.log(`State transition: ${currentState} -> ${newState}`);
+                 currentState = newState;
+                 if(mainContent) updateUI(); // Update UI after state change
+            }
+
+            // --- Simulation Logic --- (None needed)
+
+            // --- Button Handlers ---
+            function handleShortPress() {
+                 switch (currentState) {
+                     case State.SETTING_MINUTES: setState(State.SETTING_SECONDS); break;
+                     case State.SETTING_SECONDS: startCountdown(); break; // Calls setState(RUNNING) inside
+                     case State.RUNNING: pauseCountdown(); break; // Calls setState(PAUSED) inside
+                     case State.PAUSED: resumeCountdown(); break; // Calls setState(RUNNING) inside resume logic now
+                     case State.FINISHED: resetTimer(); break; // Calls setState(SETTING_MINUTES) inside
+                 }
+            }
+            function handleRotate(direction) {
+                 const increment = 5;
+                 if (currentState === State.SETTING_MINUTES) {
+                     setMinutes = (setMinutes + direction * 1);
+                     if (setMinutes < 0) setMinutes = 59; if (setMinutes > 59) setMinutes = 0;
+                 } else if (currentState === State.SETTING_SECONDS) {
+                      setSeconds = (setSeconds + direction * increment);
+                     if (setSeconds < 0) setSeconds = 60 - increment; if (setSeconds >= 60) setSeconds = 0;
+                 } else { return; }
+                 updateUI();
+            }
+
+            // --- Long Press Logic (Power_off.html style) ---
+            function startLongPress() {
+                if (longPressActive) return;
+                longPressActive = true;
+                longPressStartTime = Date.now();
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+                if (hintBar) {
+                    hintBar.classList.add('long-press-active'); 
+                }
+                
+                updateLongPressHintText(); // Set initial text
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintLoop() {
+                if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() { 
+                currentLongPressDuration = Date.now() - longPressStartTime;
+                let remainingSecondsForPowerOff;
+
+                if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                    remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                    if (hintBar) {
+                        hintBar.innerHTML = `长按返回主菜单 | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
+                    }
+                    if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
+                        currentLongPressAction = LONG_PRESS_ACTION_NONE; 
+                    } else {
+                        currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
+                    }
+                } else { // currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION
+                    // Directly trigger power off and stop further updates from this loop
+                    if (longPressActive) { // Ensure it's only called once
+                        simulateDirectPowerOff(); 
+                    }
+                    return; // Exit function as device is "off"
+                }
+            }
+            
+            function cancelLongPress() {
+                if (!longPressActive) return;
+                longPressActive = false;
+                if (longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                    updateUI(); // Restore normal hint text
+                }
+
+                // Execute return action if user released after 1 second but before 5 seconds
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
+                    console.log("Executing Back Action (返回主菜单)...");
+                    window.location.href = 'main_menu.html';
+                } else { 
+                    console.log("Long press cancelled (不足1秒).");
+                }
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            }
+
+            function simulateDirectPowerOff() {
+                console.log("Simulating Direct Power Off - Black Screen");
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) {
+                    deviceScreen.innerHTML = ''; // Remove all content
+                    deviceScreen.style.backgroundColor = '#000000'; // Set background to black
+                }
+                // Ensure the long press loop is stopped if called from within it
+                if (longPressActive && longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null; // Clear the timer ID
+                    longPressActive = false; // Mark as no longer active
+                }
+            }
+
+            function disableAllButtons() {
+                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {
+                    if(btn) btn.disabled = true;
+                });
+            }
+
+
+            // --- Event Listeners ---
+            if(btnRotateLeft) btnRotateLeft.addEventListener('click', () => handleRotate(-1));
+            if(btnRotateRight) btnRotateRight.addEventListener('click', () => handleRotate(1));
+            if(btnShortPress) btnShortPress.addEventListener('click', handleShortPress);
+            if(btnLongPress) {
+                btnLongPress.addEventListener('mousedown', startLongPress);
+                btnLongPress.addEventListener('mouseup', cancelLongPress);
+                btnLongPress.addEventListener('mouseleave', cancelLongPress);
+            }
+            if(btnReturnIndex) btnReturnIndex.addEventListener('click', () => { window.location.href = 'index.html'; });
+
+            // btnToggleLanguage event listener removed
+
+            // --- Initial Setup ---
+            setState(State.SETTING_MINUTES); // Start in setting minutes state
+            if(progressCircle) {
+                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
+                progressCircle.style.strokeDashoffset = circumference;
+            } else {
+                console.error("Progress circle element not found during initialization.");
+            }
+        });
+
+    </script>
+
+</body>
+</html>

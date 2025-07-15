@@ -22,6 +22,9 @@
         .about-item .label { font-size: 16px; color: #a0a0a0; }
         .about-item .value { font-size: 16px; color: #e0e0e0; font-weight: 500; text-align: right; }
         .hint-bar { text-align: center; padding: 8px 10px 12px 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; height: 36px; line-height: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: absolute; bottom: 0; left: 0; width: 100%; z-index: 5; }
+        .hint-bar.long-press-active { color: #ffffff; /* White text during long press */ }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
         
         /* Minimal overlay for long press visual feedback if needed, or can be omitted if no progress shown */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; color: white; z-index: 10; opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease; font-size: 1.2rem; }
@@ -93,26 +96,106 @@
             // btnToggleLanguage removed
 
             let longPressTimer = null;
+            let longPressStartTime = 0;
             let longPressActive = false;
-            const LONG_PRESS_DURATION_BACK = 1000; // 1 second
+            let currentLongPressDuration = 0;
+
+            const LONG_PRESS_RETURN_DURATION = 1000; // 1 second to trigger return
+            const LONG_PRESS_POWER_OFF_DURATION = 5000; // 5 seconds to trigger power off
+
+            const LONG_PRESS_ACTION_NONE = 0;
+            const LONG_PRESS_ACTION_RETURN = 1;
+            const LONG_PRESS_ACTION_POWER_OFF = 2;
+            let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
+            // --- Long Press Logic ---
+            function simulateDirectPowerOff() {
+                console.log("Simulating Direct Power Off - Black Screen");
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) {
+                    deviceScreen.innerHTML = ''; // Remove all content
+                    deviceScreen.style.backgroundColor = '#000000'; // Set background to black
+                }
+                if (longPressActive && longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                    longPressActive = false;
+                }
+            }
+
+            function disableAllButtons() {
+                [btnLongPress, btnReturnIndex].forEach(btn => {
+                    if(btn) btn.disabled = true;
+                });
+            }
 
             function startLongPress() {
                 if (longPressActive) return;
                 longPressActive = true;
-                if(longPressFeedbackOverlay) longPressFeedbackOverlay.classList.add('visible'); // Show feedback
+                longPressStartTime = Date.now();
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
-                longPressTimer = setTimeout(() => {
-                    if (longPressActive) {
-                        console.log("Long press activated: Navigating back to settings menu.");
-                        window.location.href = 'settings_menu.html';
+                if (hintBar) {
+                    hintBar.classList.add('long-press-active'); 
+                }
+                if(longPressFeedbackOverlay) longPressFeedbackOverlay.classList.add('visible');
+                
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintLoop() {
+                if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() { 
+                currentLongPressDuration = Date.now() - longPressStartTime;
+                let remainingSecondsForPowerOff;
+
+                if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                    remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                    if (hintBar) {
+                        hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                     }
-                }, LONG_PRESS_DURATION_BACK);
+                    if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
+                        currentLongPressAction = LONG_PRESS_ACTION_NONE; 
+                    } else {
+                        currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
+                    }
+                } else {
+                    if (longPressActive) {
+                        simulateDirectPowerOff(); 
+                    }
+                    return;
+                }
             }
 
             function cancelLongPress() {
-                if (longPressTimer) clearTimeout(longPressTimer);
-                if(longPressFeedbackOverlay) longPressFeedbackOverlay.classList.remove('visible'); // Hide feedback
+                if (!longPressActive) return;
                 longPressActive = false;
+                if (longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                    hintBar.textContent = "长按旋钮返回"; 
+                }
+                if(longPressFeedbackOverlay) longPressFeedbackOverlay.classList.remove('visible');
+
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
+                    console.log("Executing Return Action (返回上一级菜单)...");
+                    window.location.href = 'settings_menu.html';
+                } else { 
+                    console.log("Long press cancelled (不足1秒).");
+                }
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
             }
 
             // Event Listeners

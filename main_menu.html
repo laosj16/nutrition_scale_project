@@ -23,28 +23,14 @@
         .menu-item.selected i { color: #ffffff; }
         .menu-item.selected span { color: #ffffff; }
         .hint-bar { text-align: center; padding: 8px 10px 10px 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: auto; min-height: 32px; }
+        .hint-bar.long-press-active { color: #ffffff; /* White text during long press */ }
+        @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .blink-text-inline { animation: blink-text-animation 1s infinite; font-weight: bold; }
 
         /* Page Indicator Styles */
         .page-indicator-container { display: flex; justify-content: center; align-items: center; padding: 5px 0; /* Reduced padding */ flex-shrink: 0; height: 20px; /* Fixed height for indicator */ }
         .page-dot { width: 8px; height: 8px; background-color: #555; border-radius: 50%; margin: 0 4px; transition: background-color 0.3s ease, transform 0.3s ease; }
         .page-dot.active { background-color: #007AFF; transform: scale(1.2); }
-
-        /* Base Overlay Style */
-        .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; z-index: 10; opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease; }
-        .overlay.visible { opacity: 1; visibility: visible; }
-        /* Long Press Progress Ring (Enlarged) */
-        .progress-ring { position: relative; width: 90px; height: 90px; margin-bottom: 1rem; }
-        .progress-ring__circle { transition: 0.1s stroke-dashoffset linear, 0.2s stroke ease; transform: rotate(-90deg); transform-origin: 50% 50%; }
-        .progress-ring__svg circle { stroke-width: 6; }
-        .progress-ring__svg .progress-ring__circle--background { r: 42; cx: 45; cy: 45; }
-        .progress-ring__svg .progress-ring__circle { r: 42; cx: 45; cy: 45; }
-        .progress-ring__text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 24px; font-weight: bold; }
-        #long-press-action-text { font-size: 1.1rem; text-align: center; padding: 0 10px;}
-
-        /* Power Off Confirmation Overlay */
-        #power-off-confirm-overlay .confirm-options { display: flex; gap: 20px; margin-top: 20px; }
-        #power-off-confirm-overlay .option { padding: 8px 16px; border: 2px solid #555; border-radius: 6px; cursor: default; transition: background-color 0.2s, border-color 0.2s; }
-        #power-off-confirm-overlay .option.selected { background-color: #007AFF; border-color: #0056b3; }
 
         /* Interaction Controls */
         .interaction-controls { position: fixed; bottom: 0; left: 0; width: 100%; background-color: rgba(240, 240, 240, 0.95); backdrop-filter: blur(5px); padding: 0.75rem 1rem; border-top: 1px solid #ccc; display: flex; justify-content: center; align-items: center; gap: 0.5rem; z-index: 100; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
@@ -64,15 +50,14 @@
         </div>
         <div class="main-content">
             <div class="menu-carousel">
-                 <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
-                <div class="menu-item original" data-target="nutrition_scale_connect_app.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤连接App</span></div>
+                <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
+                <div class="menu-item clone" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
                 <div class="menu-item original" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
                 <div class="menu-item original" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
+                <div class="menu-item original" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
                 <div class="menu-item original" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
-                <div class="menu-item clone" data-target="nutrition_scale_connect_app.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤连接App</span></div>
                 <div class="menu-item clone" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
                 <div class="menu-item clone" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
-                <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
             </div>
         </div>
         <div class="page-indicator-container">
@@ -80,24 +65,6 @@
         </div>
         <div class="hint-bar">
             旋转选择｜短按确认
-        </div>
-        <div id="long-press-overlay" class="overlay">
-             <div class="progress-ring">
-                <svg class="progress-ring__svg" width="90" height="90">
-                    <circle class="progress-ring__circle progress-ring__circle--background" stroke="#555" fill="transparent" r="42" cx="45" cy="45"/>
-                    <circle id="progress-circle" class="progress-ring__circle" stroke="#FF3B30" stroke-linecap="round" fill="transparent" r="42" cx="45" cy="45"/>
-                </svg>
-                <span id="progress-text" class="progress-ring__text"></span>
-            </div>
-            <p id="long-press-action-text" class="mt-1 text-lg"></p>
-        </div>
-         <div id="power-off-confirm-overlay" class="overlay">
-            <p class="text-xl mb-4">确认关机?</p>
-            <div class="confirm-options">
-                <span id="confirm-cancel" class="option selected">取消</span>
-                <span id="confirm-power-off" class="option">确认</span>
-            </div>
-             <p class="text-sm mt-4 text-gray-400">旋转选择, 短按确认 (3秒后自动取消)</p>
         </div>
     </div>
 
@@ -114,19 +81,8 @@
         const menuCarousel = document.querySelector('.menu-carousel');
         const allItems = menuCarousel.querySelectorAll('.menu-item');
         const mainContent = document.querySelector('.main-content');
-        const longPressOverlay = document.getElementById('long-press-overlay');
-        const progressCircle = document.getElementById('progress-circle');
-        const progressText = document.getElementById('progress-text');
-        const longPressActionText = document.getElementById('long-press-action-text');
-        const powerOffConfirmOverlay = document.getElementById('power-off-confirm-overlay');
-        const confirmCancelBtn = document.getElementById('confirm-cancel');
-        const confirmPowerOffBtn = document.getElementById('confirm-power-off');
         const hintBar = document.querySelector('.hint-bar');
         const pageIndicatorContainer = document.querySelector('.page-indicator-container');
-
-        // Calculate circumference based on new radius (42)
-        const radius = 42;
-        const circumference = radius * 2 * Math.PI;
 
         // Interaction Buttons
         const btnRotateLeft = document.getElementById('btn-rotate-left');
@@ -134,26 +90,26 @@
         const btnShortPress = document.getElementById('btn-short-press');
         const btnLongPress = document.getElementById('btn-long-press');
         const btnReturnIndex = document.getElementById('btn-return-index');
-        // btnToggleLanguage removed
 
         // --- State Variables ---
         const CLONES_COUNT = 2;
-        const ORIGINAL_ITEMS_COUNT = 5;
-        let currentLogicalIndex = 2;
+        const ORIGINAL_ITEMS_COUNT = 4;
+        let currentLogicalIndex = 0; // 营养秤作为第一个显示
         let currentDisplayIndex = CLONES_COUNT + currentLogicalIndex;
         let isTransitioning = false;
         let transitionTimeout = null;
         let longPressTimer = null;
         let longPressStartTime = 0;
         let longPressActive = false;
-        // Updated Power Confirm Duration
-        const POWER_CONFIRM_DURATION = 5000; // 5 seconds for power confirm trigger
-        const POWER_CONFIRM_TIMEOUT_DURATION = 3000; // 3 seconds inactivity timeout
+        let currentLongPressDuration = 0; // Tracks how long the button has been pressed
 
-        const LONG_PRESS_COLOR_POWER = '#FF3B30';
-        let isPowerConfirmActive = false;
-        let powerConfirmSelection = 'cancel';
-        let powerConfirmTimeout = null; // Timeout ID for inactivity
+        const LONG_PRESS_RETURN_DURATION = 1000; // 1 second to trigger return
+        const LONG_PRESS_POWER_OFF_DURATION = 5000; // 5 seconds to trigger power off
+
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        const LONG_PRESS_ACTION_POWER_OFF = 2;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
         // --- Carousel Functions (Same as V5) ---
         function calculateOffset(index) {
@@ -203,7 +159,7 @@
         }
 
         function rotateLeft() {
-            if (isTransitioning || isPowerConfirmActive) return;
+            if (isTransitioning) return;
             
             currentDisplayIndex--;
             currentLogicalIndex = (currentLogicalIndex - 1 + ORIGINAL_ITEMS_COUNT) % ORIGINAL_ITEMS_COUNT;
@@ -216,7 +172,7 @@
         }
 
         function rotateRight() {
-            if (isTransitioning || isPowerConfirmActive) return;
+            if (isTransitioning) return;
             
             currentDisplayIndex++;
             currentLogicalIndex = (currentLogicalIndex + 1) % ORIGINAL_ITEMS_COUNT;
@@ -249,151 +205,123 @@
             });
         }
 
-        // --- Power Off Confirmation Logic ---
-        function showPowerConfirm() {
-            isPowerConfirmActive = true;
-            powerConfirmSelection = 'cancel';
-            updatePowerConfirmSelection();
-            powerOffConfirmOverlay.classList.add('visible');
-             hintBar.textContent = "旋转选择, 短按确认";
-             resetPowerConfirmTimeout(); // Start inactivity timer
-        }
-        function hidePowerConfirm() {
-            if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout); // Clear timeout
-            isPowerConfirmActive = false;
-            powerOffConfirmOverlay.classList.remove('visible');
-            hintBar.textContent = "旋转选择｜短按确认";
-        }
-        function updatePowerConfirmSelection() {
-            confirmCancelBtn.classList.toggle('selected', powerConfirmSelection === 'cancel');
-            confirmPowerOffBtn.classList.toggle('selected', powerConfirmSelection === 'power-off');
-        }
-         function resetPowerConfirmTimeout() {
-            if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout);
-            powerConfirmTimeout = setTimeout(() => {
-                console.log("Power confirm timed out.");
-                hidePowerConfirm(); // Auto-cancel after timeout
-            }, POWER_CONFIRM_TIMEOUT_DURATION);
-        }
-        function simulatePowerOff() {
-            console.log("Simulating Power Off...");
-            powerOffConfirmOverlay.innerHTML = '<p class="text-2xl">关机...</p>';
+        // --- Power Off Functions (Updated) ---
+        function simulateDirectPowerOff() {
+            console.log("Simulating Direct Power Off - Black Screen");
             disableAllButtons();
-        }
-         function disableAllButtons() {
-             [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex, btnToggleLanguage].forEach(btn => {if(btn)btn.disabled = true;}); // btnToggleLanguage will be null but check handles it
-        }
-
-
-        // --- Long Press Logic (Menu: Only Power Off @ 5s) ---
-        progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-        progressCircle.style.strokeDashoffset = circumference;
-
-        function setProgress(percent) {
-            const offset = circumference - percent / 100 * circumference;
-            progressCircle.style.strokeDashoffset = offset;
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = ''; // Remove all content
+                deviceScreen.style.backgroundColor = '#000000'; // Set background to black
+            }
+            // Ensure the long press loop is stopped if called from within it
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null; // Clear the timer ID
+                longPressActive = false; // Mark as no longer active
+            }
         }
 
+        function disableAllButtons() {
+            [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {
+                if(btn) btn.disabled = true;
+            });
+        }
+
+
+        // --- Long Press Logic (Updated to match Power_off.html) ---
         function startLongPress() {
-            if (longPressActive || isPowerConfirmActive) return;
-
+            if (longPressActive) return;
             longPressActive = true;
             longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
-            progressCircle.setAttribute('stroke', LONG_PRESS_COLOR_POWER); // Power color only
-            progressText.textContent = ''; // Clear previous number
-            longPressActionText.textContent = ''; // Clear previous text
-            setProgress(0);
-            longPressOverlay.classList.add('visible');
+            if (hintBar) {
+                hintBar.classList.add('long-press-active'); 
+            }
+            
+            updateLongPressHintText(); // Set initial text
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
 
-            const updateProgress = () => {
-                if (!longPressActive) return;
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
 
-                const elapsedTime = Date.now() - longPressStartTime;
-                const progressPercent = Math.min(100, (elapsedTime / POWER_CONFIRM_DURATION) * 100);
-                setProgress(progressPercent);
+        function updateLongPressHintText() { 
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            let remainingSecondsForPowerOff;
 
-                const remainingSeconds = Math.ceil((POWER_CONFIRM_DURATION - elapsedTime) / 1000);
-                progressText.textContent = remainingSeconds > 0 ? remainingSeconds : '0'; // Countdown from 5
-                // Only show power off hint text
-                longPressActionText.textContent = `长按 ${remainingSeconds > 0 ? remainingSeconds : 0} 秒后关机`;
-
-
-                if (elapsedTime >= POWER_CONFIRM_DURATION) {
-                    cancelAnimationFrame(longPressTimer);
-                    longPressTimer = null;
-                } else if (longPressActive) {
-                    longPressTimer = requestAnimationFrame(updateProgress);
+            if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
+                remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                if (hintBar) {
+                    hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                 }
-            };
-            longPressTimer = requestAnimationFrame(updateProgress);
+                if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
+                    currentLongPressAction = LONG_PRESS_ACTION_NONE; 
+                } else {
+                    currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
+                }
+            } else { // currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION
+                // Directly trigger power off and stop further updates from this loop
+                if (longPressActive) { // Ensure it's only called once
+                    simulateDirectPowerOff(); 
+                }
+                return; // Exit function as device is "off"
+            }
         }
 
         function cancelLongPress() {
             if (!longPressActive) return;
-
             longPressActive = false;
             if (longPressTimer) {
                 cancelAnimationFrame(longPressTimer);
                 longPressTimer = null;
             }
 
-            const elapsedTime = Date.now() - longPressStartTime;
-
-            // Only trigger confirm if held for the full 5 seconds
-            if (elapsedTime >= POWER_CONFIRM_DURATION) {
-                longPressOverlay.classList.remove('visible');
-                showPowerConfirm();
-            } else {
-                longPressOverlay.classList.remove('visible');
-                console.log("Long press cancelled (too short).");
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+                hintBar.textContent = "旋转选择｜短按确认"; 
             }
+
+            // Execute action based on duration when button is released
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
+                console.log("Executing Return Action (返回上一级菜单)...");
+                window.location.href = 'index.html'; // Return to index page (上一级菜单)
+            } else { 
+                console.log("Long press cancelled (不足1秒).");
+            }
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
         }
 
         // --- Event Listeners ---
         btnRotateLeft.addEventListener('click', () => {
-             if (isPowerConfirmActive) {
-                powerConfirmSelection = (powerConfirmSelection === 'cancel') ? 'power-off' : 'cancel';
-                updatePowerConfirmSelection();
-                resetPowerConfirmTimeout(); // Reset timeout on interaction
-            } else {
-                rotateLeft();
-            }
+            rotateLeft();
         });
+        
         btnRotateRight.addEventListener('click', () => {
-             if (isPowerConfirmActive) {
-                powerConfirmSelection = (powerConfirmSelection === 'cancel') ? 'power-off' : 'cancel';
-                updatePowerConfirmSelection();
-                resetPowerConfirmTimeout(); // Reset timeout on interaction
-            } else {
-                rotateRight();
-            }
+            rotateRight();
         });
 
         btnShortPress.addEventListener('click', () => {
             if (isTransitioning) return;
 
-            if (isPowerConfirmActive) {
-                 clearTimeout(powerConfirmTimeout); // Clear timeout on action
-                if (powerConfirmSelection === 'power-off') {
-                    simulatePowerOff();
-                } else {
-                    hidePowerConfirm();
-                }
-            } else {
-                // Handle menu item selection
-                const selectedItemElement = allItems[currentDisplayIndex];
-                const targetPage = selectedItemElement?.getAttribute('data-target');
-                if (targetPage) {
-                    selectedItemElement.style.transition = 'transform 0.1s ease';
-                    selectedItemElement.style.transform = 'scale(1.15)';
-                    setTimeout(() => {
-                        selectedItemElement.style.transition = 'transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease';
-                        updateCarousel();
-                        console.log(`Navigating to: ${targetPage}`);
-                        window.location.href = targetPage;
-                    }, 100);
-                }
+            // Handle menu item selection
+            const selectedItemElement = allItems[currentDisplayIndex];
+            const targetPage = selectedItemElement?.getAttribute('data-target');
+            if (targetPage) {
+                selectedItemElement.style.transition = 'transform 0.1s ease';
+                selectedItemElement.style.transform = 'scale(1.15)';
+                setTimeout(() => {
+                    selectedItemElement.style.transition = 'transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease';
+                    updateCarousel();
+                    console.log(`Navigating to: ${targetPage}`);
+                    window.location.href = targetPage;
+                }, 100);
             }
         });
 
@@ -415,9 +343,6 @@
             updateCarousel(false); // This will also call updatePageIndicator
             setTimeout(() => { menuCarousel.style.transition = 'transform 0.3s ease-out'; }, 50);
             hintBar.textContent = "旋转选择｜短按确认";
-             // Initialize progress circle stroke-dasharray based on new radius
-            progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-            progressCircle.style.strokeDashoffset = circumference;
         });
         window.addEventListener('resize', () => {
             updateCarousel(false); // This will also call updatePageIndicator

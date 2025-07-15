@@ -411,7 +411,7 @@
             if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
                 remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
                 if (hintBar) {
-                    hintBar.innerHTML = `长按<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>后将关机，现在松开旋钮返回上一级菜单`;
+                    hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                 }
                 if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
                     currentLongPressAction = LONG_PRESS_ACTION_NONE; 
