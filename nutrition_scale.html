@@ -22,12 +22,10 @@
         .main-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 10px; position: relative; width: 100%; overflow: hidden; }
         #food-selection { width: 100%; max-width: 460px; height: 280px; margin: 0 auto; display: flex; justify-content: center; align-items: center; }
         #food-grid { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 460px; height: 280px; padding: 15px; box-sizing: border-box; }
-        .food-item { background-color: #333; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 16px; padding: 8px; border: 2px solid transparent; transition: all 0.2s ease-out; cursor: default; overflow: hidden; }
+        .food-item { background-color: #333; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 16px; padding: 12px; border: 2px solid transparent; transition: all 0.2s ease-out; cursor: default; overflow: hidden; }
         .food-item.selected { transform: scale(1.1); border-color: #3b82f6; background-color: #2563eb; z-index: 2; font-weight: bold; }
-        .food-item i { font-size: 32px; color: inherit; margin-bottom: 8px; transition: color 0.2s ease; }
-        .food-item span { font-size: 12px; font-weight: 500; color: #e0e0e0; transition: color 0.2s ease; }
+        .food-item i { font-size: 40px; color: inherit; transition: color 0.2s ease; }
         .food-item.selected i { color: #ffffff; }
-        .food-item.selected span { color: #ffffff; }
         .nutrition-display { width: 100%; max-width: 95%; display: flex; flex-direction: column; align-items: center; height: 100%; overflow: hidden; padding: 0 5px; box-sizing: border-box; }
         .weight-display-nutrition { display: flex; justify-content: center; align-items: baseline; margin-bottom: 8px; width: 100%; flex-shrink: 0; }
         .weight-value { font-size: 64px; font-weight: 700; color: #ffffff; line-height: 1; }
@@ -126,7 +124,7 @@
             { name: "米饭", icon: "fa-solid fa-bowl-rice", color: "#FFFFE0", kcal: 130, p: 2.7, f: 0.3, c: 28.2, fiber: 0.4, ca: 10, fe: 0.8, zn: 1.1, se: 15.1, na: 1, k: 35, energy: Math.round(130 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.07, vitB2: 0.01, vitB6: 0.16, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.11, niacin: 1.6, phos: 35, mg: 12, cu: 0.07, mn: 0.38 },
             { name: "鸡蛋", icon: "fa-solid fa-egg", color: "#FFD700", kcal: 155, p: 13.0, f: 11.0, c: 1.1, fiber: 0.0, ca: 50, fe: 1.2, zn: 1.1, se: 30.8, na: 124, k: 126, energy: Math.round(155 * 4.184), cholesterol: 373, vitA: 149, vitB1: 0.03, vitB2: 0.5, vitB6: 0.12, vitB12: 1.1, vitC: 0, vitD: 2.2, vitE: 1.03, niacin: 0.06, phos: 198, mg: 10, cu: 0.07, mn: 0.03 },
             { name: "菠菜", icon: "fa-solid fa-leaf", color: "#006400", kcal: 23, p: 2.9, f: 0.4, c: 3.6, fiber: 2.2, ca: 99, fe: 2.7, zn: 0.5, se: 1.0, na: 79, k: 558, energy: Math.round(23 * 4.184), cholesterol: 0, vitA: 469, vitB1: 0.08, vitB2: 0.19, vitB6: 0.19, vitB12: 0, vitC: 28.1, vitD: 0, vitE: 2.03, niacin: 0.72, phos: 49, mg: 79, cu: 0.13, mn: 0.9 },
-            { name: "杏仁", icon: "fa-solid fa-nut", color: "#A0522D", kcal: 579, p: 21.2, f: 49.9, c: 21.6, fiber: 12.5, ca: 269, fe: 3.7, zn: 3.1, se: 4.1, na: 1, k: 733, energy: Math.round(579 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.21, vitB2: 1.14, vitB6: 0.14, vitB12: 0, vitC: 0, vitD: 0, vitE: 25.63, niacin: 3.6, phos: 481, mg: 270, cu: 1.03, mn: 2.18 },
+            { name: "杏仁", icon: "fa-solid fa-seedling", color: "#A0522D", kcal: 579, p: 21.2, f: 49.9, c: 21.6, fiber: 12.5, ca: 269, fe: 3.7, zn: 3.1, se: 4.1, na: 1, k: 733, energy: Math.round(579 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.21, vitB2: 1.14, vitB6: 0.14, vitB12: 0, vitC: 0, vitD: 0, vitE: 25.63, niacin: 3.6, phos: 481, mg: 270, cu: 1.03, mn: 2.18 },
             { name: "面包", icon: "fa-solid fa-bread-slice", color: "#DEB887", kcal: 265, p: 13.0, f: 3.3, c: 49.0, fiber: 7.0, ca: 148, fe: 3.6, zn: 1.0, se: 19.0, na: 491, k: 260, energy: Math.round(265 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.45, vitB2: 0.35, vitB6: 0.08, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.2, niacin: 5.0, phos: 150, mg: 40, cu: 0.15, mn: 0.6 },
             { name: "牛奶", icon: "fa-solid fa-glass-whiskey", color: "#ADD8E6", kcal: 42, p: 3.4, f: 1.0, c: 5.0, fiber: 0.0, ca: 125, fe: 0.1, zn: 0.4, se: 3.7, na: 44, k: 150, energy: Math.round(42 * 4.184), cholesterol: 5, vitA: 40, vitB1: 0.04, vitB2: 0.17, vitB6: 0.04, vitB12: 0.45, vitC: 0, vitD: 1.2, vitE: 0.07, niacin: 0.1, phos: 95, mg: 12, cu: 0.01, mn: 0.003 }
         ];
@@ -303,7 +301,8 @@
                     hintTextVal = isWeighing ? "旋转查看更多 | 短按去皮" : "旋转切换单位｜短按去皮";
                     shortPressAction = 'TARE';
                 } else {
-                    promptText = "选择食物";
+                    const food = foodDatabase[selectedFoodIndex];
+                    promptText = `${food.name}`;
                     const pageSize = 6;
                     const indexOnPage = selectedFoodIndex % pageSize;
                     foodItemElements.forEach((item, index) => {
@@ -341,11 +340,6 @@
                       iconElement.className = food.icon;
                       iconElement.style.color = food.color;
                       item.appendChild(iconElement);
-                      
-                      // 创建名称元素
-                      const nameSpan = document.createElement('span');
-                      nameSpan.textContent = food.name;
-                      item.appendChild(nameSpan);
                       
                       foodGrid.appendChild(item);
                       foodItemElements.push(item);
@@ -453,8 +447,8 @@
                     hintBar.classList.remove('long-press-active');
                     // Restore original hint text based on current UI state
                     const isWeighing = currentWeight > 0.05;
-                    if (isFoodConfirmed) { hintBar.textContent = isWeighing ? "旋转来向下滚动查看, 短按去皮" : "请放置食物称重,左右旋转切换单位"; } 
-                    else { hintBar.textContent = "旋转选择食物, 短按确认"; }
+                    if (isFoodConfirmed) { hintBar.textContent = isWeighing ? "旋转查看更多 | 短按去皮" : "旋转切换单位｜短按去皮"; } 
+                    else { hintBar.textContent = "旋转选择 | 短按确认"; }
                 }
                 if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { window.location.href = 'main_menu.html'; } 
                 else if (currentLongPressAction === LONG_PRESS_ACTION_NONE) { console.log("Long press cancelled (不足1秒)."); }
