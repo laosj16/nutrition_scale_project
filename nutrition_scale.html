@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+    <!-- Remix Icon CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>营养秤模式 - 智能食物秤 Pro</title> <script src="https://cdn.tailwindcss.com"></script>
@@ -9,10 +11,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+    /* 主要营养素区字体加大 */
+    .major-nutrients-section .section-title {
+        font-size: 1.35em;
+        font-weight: bold;
+    }
+    .major-nutrients-container {
+        font-size: 1.22em;
+    }
+    .major-nutrient-item .nutrient-name {
+        font-size: 1.13em;
+        font-weight: 500;
+    }
+    .major-nutrient-item .nutrient-value,
+    .major-nutrient-item .nutrient-unit {
+        font-size: 1.18em;
+        font-weight: 600;
+    }
+    .major-nutrient-item .dv-percentage {
+        font-size: 1.08em;
+        font-weight: 600;
+        margin-left: 0.5em;
+    }
+    .major-nutrients-container .dv-explanation {
+        font-size: 1em;
+        margin-top: 0.5em;
+    }
+    /* 保证主要营养素区下所有文字都加大 */
+    @media (max-width: 480px) {
+      .major-nutrients-section .section-title { font-size: 1.12em; }
+      .major-nutrients-container { font-size: 1.08em; }
+      .major-nutrient-item .nutrient-name { font-size: 1em; }
+      .major-nutrient-item .nutrient-value, .major-nutrient-item .nutrient-unit { font-size: 1.05em; }
+      .major-nutrient-item .dv-percentage { font-size: 0.98em; }
+    }
         /* Base styles */
         body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #f0f0f0; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding-bottom: 80px; }
         .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
-
         /* Status Bar */
         .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 36px; position: relative; }
         .status-bar > i { font-size: 18px; color: #e0e0e0; line-height: 1; flex-shrink: 0; }
@@ -26,18 +61,155 @@
         .food-item.selected { transform: scale(1.1); border-color: #3b82f6; background-color: #2563eb; z-index: 2; font-weight: bold; }
         .food-item i { font-size: 40px; color: inherit; transition: color 0.2s ease; }
         .food-item.selected i { color: #ffffff; }
-        .nutrition-display { width: 100%; max-width: 95%; display: flex; flex-direction: column; align-items: center; height: 100%; overflow: hidden; padding: 0 5px; box-sizing: border-box; }
-        .weight-display-nutrition { display: flex; justify-content: center; align-items: baseline; margin-bottom: 8px; width: 100%; flex-shrink: 0; }
-        .weight-value { font-size: 64px; font-weight: 700; color: #ffffff; line-height: 1; }
-        .weight-unit { font-size: 22px; font-weight: 500; color: #a0a0a0; margin-left: 6px; transition: color 0.3s ease; }
+        .nutrition-display { width: 100%; max-width: 95%; display: flex; flex-direction: column; align-items: center; height: 100%; overflow: hidden; padding: 0 4px; box-sizing: border-box; }
+        .weight-energy-display { display: flex; flex-direction: column; justify-content: flex-start; align-items: center; margin-bottom: 16px; width: 100%; flex-shrink: 0; padding: 2px 20px 40px 20px; min-height: 200px; }
+        .weight-section { display: flex; flex-direction: row; align-items: baseline; justify-content: center; margin-bottom: 30px; margin-top: 0; padding-bottom: 20px; border-bottom: 3px solid #60a5fa; }
+        .energy-section { display: flex; flex-direction: row; align-items: center; justify-content: space-around; position: relative; gap: 30px; }
+        
+        /* 半圆进度条容器 */
+        .energy-chart-container, .fat-chart-container { position: relative; width: 180px; height: 90px; margin-bottom: 50px; }
+        
+        /* 半圆背景 */
+        .energy-semicircle-bg, .fat-semicircle-bg {
+            width: 180px; height: 90px;
+            border: 12px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            border-top-left-radius: 36px;
+            border-top-right-radius: 36px;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            position: absolute; top: 0; left: 0;
+            background: transparent;
+            transition: border-color 0.3s;
+        }
+        .energy-semicircle-bg.color-high, .fat-semicircle-bg.color-high { border-top-color: #ef4444; border-left-color: #ef4444; border-right-color: #ef4444; }
+        .energy-semicircle-bg.color-medium, .fat-semicircle-bg.color-medium { border-top-color: #fbbf24; border-left-color: #fbbf24; border-right-color: #fbbf24; }
+        .energy-semicircle-bg.color-low, .fat-semicircle-bg.color-low { border-top-color: #60a5fa; border-left-color: #60a5fa; border-right-color: #60a5fa; }
+        .energy-semicircle-bg.color-minimal, .fat-semicircle-bg.color-minimal { border-top-color: #34d399; border-left-color: #34d399; border-right-color: #34d399; }
+        
+        /* 半圆进度条 */
+
+        
+        /* 能量值、单位、百分比、名称整体垂直居中 */
+        .energy-value-container, .fat-value-container {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translate(-50%, 0);
+            text-align: center;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+            width: 100%;
+        }
+        .energy-value-chart, .fat-value-chart { font-size: 32px; font-weight: 700; line-height: 1; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .energy-value-chart { color: #60a5fa; }
+        .fat-value-chart { color: #f59e0b; }
+        .energy-unit-chart, .fat-unit-chart { font-size: 16px; font-weight: 500; color: #a0a0a0; }
+        
+        /* 百分比标签 */
+        .energy-percentage-label, .fat-percentage-label {
+            position: static;
+            font-size: 20px;
+            font-weight: 700;
+            color: #e0e0e0;
+            text-align: center;
+            margin-bottom: 2px;
+            background-color: transparent;
+            border: none;
+        }
+        
+        /* 营养素名称标签 */
+        .energy-name-label, .fat-name-label {
+            position: absolute;
+            bottom: -44px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .energy-name-label { color: #60a5fa; }
+        .fat-name-label { color: #f59e0b; }
+        .energy-unit-chart { font-size: 20px; font-weight: 500; color: #a0a0a0; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .energy-dv-chart { font-size: 14px; font-weight: 600; padding: 2px 6px; border-radius: 4px; min-width: 35px; text-align: center; }
+        
+        .weight-value { font-size: 75px; font-weight: 700; color: #ffffff; line-height: 1; margin-bottom: 0; margin-right: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .energy-value { font-size: 60px; font-weight: 700; color: #60a5fa; line-height: 1; margin-bottom: 0; margin-right: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .weight-unit { font-size: 32px; font-weight: 500; color: #a0a0a0; transition: color 0.3s ease; }
+        .energy-unit { font-size: 28px; font-weight: 500; color: #a0a0a0; display: flex; align-items: center; gap: 8px; }
+        .energy-dv { font-size: 16px; font-weight: 600; padding: 4px 8px; border-radius: 6px; min-width: 40px; text-align: center; }
         .unit-g { color: #60a5fa; } .unit-ml { color: #34d399; } .unit-oz { color: #fbbf24; } .unit-lb { color: #f87171; } .unit-lb-oz { color: #c084fc; }
-        #nutrient-details-container { flex-grow: 1; width: 100%; overflow-y: auto; padding: 5px 0; scrollbar-width: none; -ms-overflow-style: none; }
+        #nutrient-details-container { flex-grow: 1; width: 100%; overflow-y: auto; padding: 8px 0; scrollbar-width: none; -ms-overflow-style: none; }
         #nutrient-details-container::-webkit-scrollbar { display: none; }
-        .all-nutrients-grid-custom { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; width: 100%; padding: 5px 0; }
-        .all-nutrients-grid-custom .nutrient-item { background-color: rgba(255, 255, 255, 0.08); border-radius: 6px; padding: 10px 8px; text-align: center; }
-        .all-nutrients-grid-custom .nutrient-name { font-size: 14px; color: #b0b0b0; margin-bottom: 4px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .all-nutrients-grid-custom .nutrient-value { font-size: 20px; color: #ffffff; font-weight: 600; }
-        .all-nutrients-grid-custom .nutrient-unit { font-size: 12px; color: #a0a0a0; margin-left: 4px; }
+        
+        /* FDA营养标签风格布局 */
+        .nutrition-section { margin-bottom: 12px; padding: 0 8px; }
+        
+        /* 卡路里显示 - 特殊突出 */
+        .calories-section { margin-bottom: 16px; border-bottom: 4px solid #60a5fa; padding-bottom: 8px; }
+        .calories-display { background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(29, 78, 216, 0.15)); border: 2px solid rgba(59, 130, 246, 0.4); border-radius: 8px; padding: 16px; text-align: center; }
+        .calories-value { font-size: 32px; font-weight: 800; color: #ffffff; display: block; line-height: 1; }
+        .calories-label { font-size: 14px; color: #a0a0a0; margin-top: 4px; display: block; }
+        
+        /* 主要营养素 - FDA标准层次 */
+        .major-nutrients-section { margin-bottom: 16px; }
+        .major-nutrients-container { border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; background: rgba(255, 255, 255, 0.05); }
+        
+        /* 主营养素条目 */
+        .major-nutrient-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+        }
+        .major-nutrient-item:last-child { border-bottom: none; }
+        .major-nutrient-item.primary { font-weight: 600; font-size: 16px; background: rgba(59, 130, 246, 0.1); }
+        .major-nutrient-item.sub { padding-left: 24px; font-size: 14px; color: #d0d0d0; }
+        .nutrient-name { color: #e0e0e0; margin-right: 0.5em; }
+        .nutrient-value { color: #60a5fa; font-weight: 600; }
+        .nutrient-unit { color: #a0a0a0; margin-left: 2px; font-size: 0.9em; }
+        
+        /* FDA Daily Value 百分比样式 - 健康导向颜色编码 */
+        .nutrient-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .dv-percentage { font-size: 12px; font-weight: 500; padding: 2px 6px; border-radius: 4px; min-width: 35px; text-align: center; }
+        .dv-high { color: #ef4444 !important; background: none !important; border: none !important; } /* ≥20% 红色警示 */
+        .dv-medium { color: #fbbf24 !important; background: none !important; border: none !important; } /* 10-19% 黄色注意 */
+        .dv-low { color: #60a5fa !important; background: none !important; border: none !important; } /* 5-9% 蓝色适中 */
+        .dv-minimal { color: #34d399 !important; background: none !important; border: none !important; } /* <5% 绿色安全 */
+        
+        /* Daily Value 说明文字 */
+        .dv-explanation { font-size: 11px; color: #888; text-align: center; padding: 6px 8px; margin-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1); font-style: italic; }
+        
+        /* 详细营养素 - 紧凑网格布局 */
+        .detailed-nutrients-section { margin-bottom: 16px; }
+        .section-title { font-size: 20px; font-weight: 600; color: #60a5fa; margin-bottom: 10px; text-align: center; border-bottom: 2px solid rgba(96, 165, 250, 0.3); padding-bottom: 6px; }
+        .nutrients-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .nutrient-mini-card { background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 14px 10px; text-align: center; min-height: 60px; display: flex; flex-direction: column; justify-content: center; transition: all 0.2s ease; position: relative; }
+        .nutrient-mini-card:hover { background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.08)); border-color: rgba(255, 255, 255, 0.25); }
+        .nutrient-mini-card .mini-name { font-size: 18px; color: #b0b0b0; margin-bottom: 4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .nutrient-mini-card .mini-value { font-size: 22px; color: #ffffff; font-weight: 700; line-height: 1.1; }
+        .nutrient-mini-card .mini-unit { font-size: 14px; color: #a0a0a0; margin-left: 2px; }
+        
+        /* 小卡片DV百分比徽章 */
+        .mini-dv { position: absolute; top: 6px; right: 8px; font-size: 16px; font-weight: 700; padding: 2px 7px; border-radius: 4px; line-height: 1.1; min-width: 32px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.10); background: rgba(255,255,255,0.10); }
+        
+        /* 维生素特殊颜色 */
+        .vitamins-section .nutrient-mini-card { border-color: rgba(34, 197, 94, 0.2); }
+        .vitamins-section .nutrient-mini-card .mini-name { color: #34d399; }
+        .vitamins-section .nutrient-mini-card:hover { border-color: rgba(34, 197, 94, 0.3); }
+        
+        /* 矿物质特殊颜色 */
+        .minerals-section .nutrient-mini-card { border-color: rgba(251, 191, 36, 0.2); }
+        .minerals-section .nutrient-mini-card .mini-name { color: #fbbf24; }
+        .minerals-section .nutrient-mini-card:hover { border-color: rgba(251, 191, 36, 0.3); }
         .tare-indicator { position: absolute; top: 10px; left: 10px; background-color: #007AFF; color: white; padding: 3px 8px; border-radius: 5px; font-size: 14px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease-out; z-index: 5; white-space: nowrap; }
         .tare-indicator.visible { opacity: 1; }
         .hidden { display: none !important; }
@@ -46,6 +218,11 @@
         .page-indicator-container { display: flex; justify-content: center; align-items: center; padding: 8px 0; flex-shrink: 0; height: 24px; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); z-index: 10; }
         .page-dot { width: 8px; height: 8px; background-color: #555; border-radius: 50%; margin: 0 4px; transition: background-color 0.3s ease, transform 0.3s ease; }
         .page-dot.active { background-color: #007AFF; transform: scale(1.2); }
+
+        /* Nutrition Scroll Indicator Styles */
+        .nutrition-scroll-indicator { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 3px; z-index: 5; opacity: 0; transition: opacity 0.3s ease; }
+        .nutrition-scroll-dot { width: 4px; height: 4px; background-color: #666; border-radius: 50%; transition: background-color 0.3s ease, transform 0.3s ease; }
+        .nutrition-scroll-dot.active { background-color: #007AFF; transform: scale(1.5); }
 
         /* Hint Bar Styles (from general_weighing.html) */
         .hint-bar { text-align: center; padding: 0 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: 32px; display: flex; align-items: center; justify-content: center; white-space: normal; overflow: hidden; text-overflow: ellipsis; opacity: 1; line-height: normal; }
@@ -61,7 +238,9 @@
         .control-button.secondary { background-color: #64748b; }
         .control-button.secondary:hover { background-color: #475569; }
         .control-button:disabled { background-color: #9ca3af; cursor: not-allowed; opacity: 0.7; }
-    </style>
+</style>
+<!-- IconPark CDN（仅字体备用，SVG直接内嵌）-->
+<link rel="stylesheet" href="https://unpkg.com/@icon-park/svg@1.4.0/styles/index.css">
 </head>
 <body>
     <div class="device-screen">
@@ -79,12 +258,63 @@
                 </div>
             </div>
             <div id="nutrition-display" class="nutrition-display hidden">
-                 <div id="weight-display-nutrition" class="weight-display-nutrition">
-                     <span id="weight-value" class="weight-value">0.0</span>
-                     <span id="weight-unit" class="weight-unit">g</span>
-                 </div>
                  <div id="nutrient-details-container">
-                    <div id="all-nutrients-grid" class="all-nutrients-grid-custom"></div>
+                    <!-- 重量和能量显示 - 移动到滚动容器内 -->
+                    <div id="weight-energy-display" class="weight-energy-display">
+                        <div class="weight-section">
+                            <span id="weight-value" class="weight-value">0.0</span>
+                            <span id="weight-unit" class="weight-unit">g</span>
+                        </div>
+                        <div class="energy-section">
+                            <!-- 能量半圆图表 -->
+                            <div class="energy-chart-container">
+                                <div class="energy-semicircle-bg"></div>
+                                <div class="energy-value-container" style="flex-direction:column;align-items:center;gap:0;">
+                                    <div id="energy-percentage-label" class="energy-percentage-label" style="position:static;margin-bottom:2px;text-align:center;">0%</div>
+                                    <div style="display:flex;align-items:baseline;gap:4px;justify-content:center;">
+                                        <span id="energy-value" class="energy-value-chart">0</span>
+                                        <span class="energy-unit-chart">kcal</span>
+                                    </div>
+                                </div>
+                                <div class="energy-name-label">能量</div>
+                            </div>
+                            
+                            <!-- 总脂肪半圆图表 -->
+                            <div class="fat-chart-container">
+                                <div class="fat-semicircle-bg"></div>
+                                <div class="fat-value-container" style="flex-direction:column;align-items:center;gap:0;">
+                                    <div id="fat-percentage-label" class="fat-percentage-label" style="position:static;margin-bottom:2px;text-align:center;">0%</div>
+                                    <div style="display:flex;align-items:baseline;gap:4px;justify-content:center;">
+                                        <span id="fat-value" class="fat-value-chart">0</span>
+                                        <span class="fat-unit-chart">g</span>
+                                    </div>
+                                </div>
+                                <div class="fat-name-label">总脂肪</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 主要营养素 - Major Nutrients (FDA Style) -->
+                    <div class="nutrition-section major-nutrients-section">
+                        <div class="section-title">主要营养素</div>
+                        <div id="major-nutrients-container" class="major-nutrients-container"></div>
+                    </div>
+                    
+                    <!-- 维生素 - Vitamins -->
+                    <div class="nutrition-section detailed-nutrients-section vitamins-section">
+                        <div class="section-title">维生素</div>
+                        <div id="vitamins-grid" class="nutrients-grid"></div>
+                    </div>
+                    
+                    <!-- 矿物质 - Minerals -->
+                    <div class="nutrition-section detailed-nutrients-section minerals-section">
+                        <div class="section-title">矿物质</div>
+                        <div id="minerals-grid" class="nutrients-grid"></div>
+                    </div>
+                    
+                    <div id="nutrition-scroll-indicator" class="nutrition-scroll-indicator">
+                        <!-- Scroll dots will be generated by JavaScript -->
+                    </div>
                  </div>
             </div>
         </div>
@@ -97,7 +327,7 @@
         <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
         <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
         <button id="btn-add-weight" class="control-button" style="background-color: #10b981;">模拟加重</button>
-        <button id="btn-reset-weight" class="control-button" style="background-color: #f87171;">模拟清零</button>
+
     </div>
 
     <script>
@@ -105,28 +335,86 @@
         let currentWeight = 0.0;
         let selectedFoodIndex = 0;
         let isFoodConfirmed = false;
+        // FDA每日营养素参考值 (Daily Values - DV) - 2024年最新标准
+        const dailyValues = {
+            kcal: 2000,     // 卡路里 (参考基础，不设DV百分比)
+            f: 78,          // 总脂肪 (g)
+            satFat: 20,     // 饱和脂肪 (g)
+            cholesterol: 300, // 胆固醇 (mg)
+            na: 2300,       // 钠 (mg)
+            c: 275,         // 总碳水化合物 (g)
+            fiber: 28,      // 膳食纤维 (g)
+            addedSugar: 50, // 添加糖 (g)
+            p: 50,          // 蛋白质 (g) - 通常不要求标示%DV
+            vitA: 900,      // 维生素A (µg RAE)
+            vitB1: 1.2,     // B1硫胺素 (mg)
+            vitB2: 1.3,     // B2核黄素 (mg)
+            vitB6: 1.7,     // B6 (mg)
+            vitB12: 2.4,    // B12 (µg)
+            vitC: 90,       // 维生素C (mg)
+            vitD: 20,       // 维生素D (µg)
+            vitE: 15,       // 维生素E (mg)
+            niacin: 16,     // 烟酸 (mg NE)
+            ca: 1300,       // 钙 (mg)
+            phos: 1250,     // 磷 (mg)
+            k: 4700,        // 钾 (mg)
+            mg: 420,        // 镁 (mg)
+            fe: 18,         // 铁 (mg)
+            zn: 11,         // 锌 (mg)
+            se: 55,         // 硒 (µg)
+            cu: 0.9,        // 铜 (mg) - 注意：FDA标准是0.9mg，不是900µg
+            mn: 2.3         // 锰 (mg)
+        };
+
         const nutrients = [
-            { key: 'kcal', name: '卡路里', unit: 'kcal', precision: 0 }, { key: 'p', name: '蛋白质', unit: 'g', precision: 1 }, { key: 'f', name: '脂肪', unit: 'g', precision: 1 }, { key: 'c', name: '碳水', unit: 'g', precision: 1 },
-            { key: 'fiber', name: '纤维', unit: 'g', precision: 1 }, { key: 'cholesterol', name: '胆固醇', unit: 'mg', precision: 0 }, { key: 'ca', name: '钙', unit: 'mg', precision: 0 },
-            { key: 'vitA', name: '维生素A', unit: 'µg', precision: 0 }, { key: 'vitB1', name: '维生素B1', unit: 'mg', precision: 2 }, { key: 'vitB2', name: '维生素B2', unit: 'mg', precision: 2 }, { key: 'vitB6', name: '维生素B6', unit: 'mg', precision: 2 },
-            { key: 'vitB12', name: '维生素B12', unit: 'µg', precision: 1 }, { key: 'vitC', name: '维生素C', unit: 'mg', precision: 0 }, { key: 'vitD', name: '维生素D', unit: 'µg', precision: 0 }, { key: 'vitE', name: '维生素E', unit: 'mg', precision: 1 },
-            { key: 'niacin', name: '烟酸', unit: 'mg', precision: 1 }, { key: 'phos', name: '磷', unit: 'mg', precision: 0 }, { key: 'k', name: '钾', unit: 'mg', precision: 0 }, { key: 'na', name: '钠', unit: 'mg', precision: 0 },
-            { key: 'mg', name: '镁', unit: 'mg', precision: 0 }, { key: 'fe', name: '铁', unit: 'mg', precision: 1 }, { key: 'zn', name: '锌', unit: 'mg', precision: 1 }, { key: 'se', name: '硒', unit: 'µg', precision: 0 },
-            { key: 'cu', name: '铜', unit: 'µg', precision: 2 }, { key: 'mn', name: '锰', unit: 'mg', precision: 2 }
+            // 基础营养信息 - Calories & Macronutrients
+            { key: 'kcal', name: '能量', unit: 'kcal', precision: 0, category: 'calories', showDV: true }, // 以2000卡路里为基准显示百分比
+            
+            // 主要营养素 - Major Nutrients  
+            { key: 'f', name: '总脂肪', unit: 'g', precision: 1, category: 'major', showDV: true }, 
+            { key: 'satFat', name: '饱和脂肪', unit: 'g', precision: 1, category: 'fat-sub', showDV: true }, 
+            { key: 'transFat', name: '反式脂肪', unit: 'g', precision: 1, category: 'fat-sub', showDV: false }, // FDA无DV标准
+            { key: 'cholesterol', name: '胆固醇', unit: 'mg', precision: 0, category: 'major', showDV: true },
+            { key: 'na', name: '钠', unit: 'mg', precision: 0, category: 'major', showDV: true },
+            { key: 'c', name: '总碳水化合物', unit: 'g', precision: 1, category: 'major', showDV: true },
+            { key: 'fiber', name: '膳食纤维', unit: 'g', precision: 1, category: 'carb-sub', showDV: true }, 
+            { key: 'sugar', name: '糖', unit: 'g', precision: 1, category: 'carb-sub', showDV: false }, // FDA无总糖DV标准
+            { key: 'p', name: '蛋白质', unit: 'g', precision: 1, category: 'major', showDV: false }, // 通常不要求标示%DV
+            
+            { key: 'vitA', name: '维生素A', unit: 'µg', precision: 0, category: 'vitamins', showDV: true }, 
+            { key: 'vitB1', name: 'B1', unit: 'mg', precision: 2, category: 'vitamins', showDV: true }, 
+            { key: 'vitB2', name: 'B2', unit: 'mg', precision: 2, category: 'vitamins', showDV: true }, 
+            { key: 'vitB6', name: 'B6', unit: 'mg', precision: 2, category: 'vitamins', showDV: true },
+            { key: 'vitB12', name: 'B12', unit: 'µg', precision: 1, category: 'vitamins', showDV: true }, 
+            { key: 'vitC', name: '维生素C', unit: 'mg', precision: 0, category: 'vitamins', showDV: true }, 
+            { key: 'vitD', name: '维生素D', unit: 'µg', precision: 0, category: 'vitamins', showDV: true }, 
+            { key: 'vitE', name: '维生素E', unit: 'mg', precision: 1, category: 'vitamins', showDV: true },
+            { key: 'niacin', name: '烟酸', unit: 'mg', precision: 1, category: 'vitamins', showDV: true },
+            
+            { key: 'ca', name: '钙', unit: 'mg', precision: 0, category: 'minerals', showDV: true },
+            { key: 'phos', name: '磷', unit: 'mg', precision: 0, category: 'minerals', showDV: true }, 
+            { key: 'k', name: '钾', unit: 'mg', precision: 0, category: 'minerals', showDV: true }, 
+            { key: 'na', name: '钠', unit: 'mg', precision: 0, category: 'minerals', showDV: true },
+            { key: 'mg', name: '镁', unit: 'mg', precision: 0, category: 'minerals', showDV: true }, 
+            { key: 'fe', name: '铁', unit: 'mg', precision: 1, category: 'minerals', showDV: true }, 
+            { key: 'zn', name: '锌', unit: 'mg', precision: 1, category: 'minerals', showDV: true }, 
+            { key: 'se', name: '硒', unit: 'µg', precision: 0, category: 'minerals', showDV: true },
+            { key: 'cu', name: '铜', unit: 'µg', precision: 2, category: 'minerals', showDV: true }, 
+            { key: 'mn', name: '锰', unit: 'mg', precision: 2, category: 'minerals', showDV: true }
         ];
         const foodDatabase = [
-            { name: "苹果", icon: "fa-solid fa-apple-whole", color: "#FF6347", kcal: 52, p: 0.3, f: 0.2, c: 13.8, fiber: 2.4, ca: 6, fe: 0.1, zn: 0.0, se: 0.1, na: 1, k: 107, energy: Math.round(52 * 4.184), cholesterol: 0, vitA: 54, vitB1: 0.02, vitB2: 0.03, vitB6: 0.04, vitB12: 0, vitC: 4.6, vitD: 0, vitE: 0.18, niacin: 0.09, phos: 11, mg: 5, cu: 0.03, mn: 0.04 },
-            { name: "香蕉", icon: "fa-solid fa-moon", color: "#FFE135", kcal: 89, p: 1.1, f: 0.3, c: 22.8, fiber: 2.6, ca: 5, fe: 0.3, zn: 0.2, se: 1.0, na: 1, k: 358, energy: Math.round(89 * 4.184), cholesterol: 0, vitA: 3, vitB1: 0.03, vitB2: 0.07, vitB6: 0.37, vitB12: 0, vitC: 8.7, vitD: 0, vitE: 0.10, niacin: 0.67, phos: 22, mg: 27, cu: 0.08, mn: 0.27 },
-            { name: "鸡胸肉", icon: "fa-solid fa-drumstick-bite", color: "#D2B48C", kcal: 165, p: 31.0, f: 3.6, c: 0.0, fiber: 0.0, ca: 13, fe: 1.0, zn: 0.8, se: 25.5, na: 74, k: 256, energy: Math.round(165 * 4.184), cholesterol: 85, vitA: 0, vitB1: 0.07, vitB2: 0.09, vitB6: 0.6, vitB12: 0.4, vitC: 0, vitD: 0.1, vitE: 0.13, niacin: 11.4, phos: 228, mg: 29, cu: 0.05, mn: 0.02 },
-            { name: "胡萝卜", icon: "fa-solid fa-carrot", color: "#FFA500", kcal: 41, p: 0.9, f: 0.2, c: 10.0, fiber: 2.8, ca: 33, fe: 0.3, zn: 0.2, se: 0.1, na: 69, k: 320, energy: Math.round(41 * 4.184), cholesterol: 0, vitA: 835, vitB1: 0.07, vitB2: 0.06, vitB6: 0.14, vitB12: 0, vitC: 5.9, vitD: 0, vitE: 0.66, niacin: 0.98, phos: 35, mg: 12, cu: 0.04, mn: 0.14 },
-            { name: "西兰花", icon: "fa-solid fa-tree", color: "#228B22", kcal: 34, p: 2.8, f: 0.4, c: 7.0, fiber: 2.6, ca: 47, fe: 0.7, zn: 0.4, se: 2.5, na: 33, k: 316, energy: Math.round(34 * 4.184), cholesterol: 0, vitA: 31, vitB1: 0.07, vitB2: 0.12, vitB6: 0.18, vitB12: 0, vitC: 89.2, vitD: 0, vitE: 0.78, niacin: 0.64, phos: 66, mg: 21, cu: 0.05, mn: 0.21 },
-            { name: "三文鱼", icon: "fa-solid fa-fish-fins", color: "#FA8072", kcal: 208, p: 20.0, f: 13.0, c: 0.0, fiber: 0.0, ca: 9, fe: 0.3, zn: 0.4, se: 36.5, na: 59, k: 429, energy: Math.round(208 * 4.184), cholesterol: 55, vitA: 15, vitB1: 0.2, vitB2: 0.15, vitB6: 0.65, vitB12: 3.0, vitC: 0, vitD: 10.0, vitE: 1.3, niacin: 8.0, phos: 240, mg: 27, cu: 0.05, mn: 0.02 },
-            { name: "米饭", icon: "fa-solid fa-bowl-rice", color: "#FFFFE0", kcal: 130, p: 2.7, f: 0.3, c: 28.2, fiber: 0.4, ca: 10, fe: 0.8, zn: 1.1, se: 15.1, na: 1, k: 35, energy: Math.round(130 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.07, vitB2: 0.01, vitB6: 0.16, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.11, niacin: 1.6, phos: 35, mg: 12, cu: 0.07, mn: 0.38 },
-            { name: "鸡蛋", icon: "fa-solid fa-egg", color: "#FFD700", kcal: 155, p: 13.0, f: 11.0, c: 1.1, fiber: 0.0, ca: 50, fe: 1.2, zn: 1.1, se: 30.8, na: 124, k: 126, energy: Math.round(155 * 4.184), cholesterol: 373, vitA: 149, vitB1: 0.03, vitB2: 0.5, vitB6: 0.12, vitB12: 1.1, vitC: 0, vitD: 2.2, vitE: 1.03, niacin: 0.06, phos: 198, mg: 10, cu: 0.07, mn: 0.03 },
-            { name: "菠菜", icon: "fa-solid fa-leaf", color: "#006400", kcal: 23, p: 2.9, f: 0.4, c: 3.6, fiber: 2.2, ca: 99, fe: 2.7, zn: 0.5, se: 1.0, na: 79, k: 558, energy: Math.round(23 * 4.184), cholesterol: 0, vitA: 469, vitB1: 0.08, vitB2: 0.19, vitB6: 0.19, vitB12: 0, vitC: 28.1, vitD: 0, vitE: 2.03, niacin: 0.72, phos: 49, mg: 79, cu: 0.13, mn: 0.9 },
-            { name: "杏仁", icon: "fa-solid fa-seedling", color: "#A0522D", kcal: 579, p: 21.2, f: 49.9, c: 21.6, fiber: 12.5, ca: 269, fe: 3.7, zn: 3.1, se: 4.1, na: 1, k: 733, energy: Math.round(579 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.21, vitB2: 1.14, vitB6: 0.14, vitB12: 0, vitC: 0, vitD: 0, vitE: 25.63, niacin: 3.6, phos: 481, mg: 270, cu: 1.03, mn: 2.18 },
-            { name: "面包", icon: "fa-solid fa-bread-slice", color: "#DEB887", kcal: 265, p: 13.0, f: 3.3, c: 49.0, fiber: 7.0, ca: 148, fe: 3.6, zn: 1.0, se: 19.0, na: 491, k: 260, energy: Math.round(265 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.45, vitB2: 0.35, vitB6: 0.08, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.2, niacin: 5.0, phos: 150, mg: 40, cu: 0.15, mn: 0.6 },
-            { name: "牛奶", icon: "fa-solid fa-glass-whiskey", color: "#ADD8E6", kcal: 42, p: 3.4, f: 1.0, c: 5.0, fiber: 0.0, ca: 125, fe: 0.1, zn: 0.4, se: 3.7, na: 44, k: 150, energy: Math.round(42 * 4.184), cholesterol: 5, vitA: 40, vitB1: 0.04, vitB2: 0.17, vitB6: 0.04, vitB12: 0.45, vitC: 0, vitD: 1.2, vitE: 0.07, niacin: 0.1, phos: 95, mg: 12, cu: 0.01, mn: 0.003 }
+            { name: "鸡胸肉", icon: "🍗", color: "#D2B48C", kcal: 130, p: 27.0, f: 2.7, satFat: 0.6, transFat: 0.0, c: 0.0, fiber: 0.0, sugar: 0.0, ca: 13, fe: 0.7, zn: 0.9, se: 22.0, na: 45, k: 256, energy: Math.round(130 * 4.184), cholesterol: 60, vitA: 13, vitB1: 0.07, vitB2: 0.09, vitB6: 0.6, vitB12: 0.3, vitC: 0, vitD: 0.1, vitE: 0.13, niacin: 13.7, phos: 210, mg: 29, cu: 0.05, mn: 0.02 },
+            { name: "鸡蛋", icon: "🥚", color: "#FFD700", kcal: 143, p: 12.6, f: 9.9, satFat: 3.1, transFat: 0.0, c: 1.1, fiber: 0.0, sugar: 1.1, ca: 56, fe: 1.8, zn: 1.3, se: 30.8, na: 142, k: 126, energy: Math.round(143 * 4.184), cholesterol: 372, vitA: 160, vitB1: 0.04, vitB2: 0.5, vitB6: 0.14, vitB12: 1.1, vitC: 0, vitD: 2.0, vitE: 1.03, niacin: 0.07, phos: 198, mg: 10, cu: 0.07, mn: 0.03 },
+            { name: "米饭", icon: "🍚", color: "#FFFFE0", kcal: 116, p: 2.7, f: 0.2, satFat: 0.1, transFat: 0.0, c: 25.1, fiber: 0.3, sugar: 0.1, ca: 3, fe: 0.1, zn: 0.4, se: 2.8, na: 1, k: 26, energy: Math.round(116 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.02, vitB2: 0.01, vitB6: 0.05, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.02, niacin: 0.4, phos: 12, mg: 4, cu: 0.02, mn: 0.16 },
+            { name: "燕麦片", icon: "🌾", color: "#DEB887", kcal: 389, p: 16.9, f: 6.9, satFat: 1.2, transFat: 0.0, c: 66.3, fiber: 10.6, sugar: 0.6, ca: 54, fe: 4.7, zn: 4.0, se: 28.9, na: 2, k: 429, energy: Math.round(389 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.76, vitB2: 0.14, vitB6: 0.12, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.42, niacin: 0.96, phos: 523, mg: 177, cu: 0.63, mn: 4.92 },
+            { name: "土豆", icon: "🥔", color: "#8B4513", kcal: 77, p: 2.0, f: 0.1, satFat: 0.0, transFat: 0.0, c: 17.5, fiber: 2.2, sugar: 0.8, ca: 11, fe: 0.3, zn: 0.3, se: 0.4, na: 6, k: 379, energy: Math.round(77 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.08, vitB2: 0.03, vitB6: 0.30, vitB12: 0, vitC: 19.7, vitD: 0, vitE: 0.01, niacin: 1.06, phos: 57, mg: 23, cu: 0.11, mn: 0.15 },
+            { name: "牛奶", icon: "🥛", color: "#ADD8E6", kcal: 54, p: 3.3, f: 1.0, satFat: 0.6, transFat: 0.0, c: 5.0, fiber: 0.0, sugar: 5.0, ca: 104, fe: 0.1, zn: 0.4, se: 1.5, na: 50, k: 150, energy: Math.round(54 * 4.184), cholesterol: 5, vitA: 46, vitB1: 0.04, vitB2: 0.18, vitB6: 0.04, vitB12: 0.45, vitC: 0, vitD: 1.2, vitE: 0.07, niacin: 0.1, phos: 93, mg: 12, cu: 0.01, mn: 0.003 },
+            { name: "香蕉", icon: "🍌", color: "#FFE135", kcal: 89, p: 1.1, f: 0.3, satFat: 0.1, transFat: 0.0, c: 22.8, fiber: 2.6, sugar: 12.2, ca: 5, fe: 0.3, zn: 0.2, se: 1.0, na: 1, k: 358, energy: Math.round(89 * 4.184), cholesterol: 0, vitA: 3, vitB1: 0.03, vitB2: 0.07, vitB6: 0.37, vitB12: 0, vitC: 8.7, vitD: 0, vitE: 0.10, niacin: 0.67, phos: 22, mg: 27, cu: 0.08, mn: 0.27 },
+            { name: "牛油果", icon: "🥑", color: "#228B22", kcal: 160, p: 2.0, f: 14.7, satFat: 2.1, transFat: 0.0, c: 8.5, fiber: 6.7, sugar: 0.7, ca: 12, fe: 0.6, zn: 0.6, se: 0.4, na: 7, k: 485, energy: Math.round(160 * 4.184), cholesterol: 0, vitA: 7, vitB1: 0.07, vitB2: 0.13, vitB6: 0.26, vitB12: 0, vitC: 10.0, vitD: 0, vitE: 2.07, niacin: 1.74, phos: 52, mg: 29, cu: 0.19, mn: 0.14 },
+            { name: "西兰花", icon: "🥦", color: "#006400", kcal: 34, p: 2.8, f: 0.4, satFat: 0.1, transFat: 0.0, c: 7.0, fiber: 2.6, sugar: 1.7, ca: 47, fe: 0.7, zn: 0.4, se: 2.5, na: 33, k: 316, energy: Math.round(34 * 4.184), cholesterol: 0, vitA: 31, vitB1: 0.07, vitB2: 0.12, vitB6: 0.18, vitB12: 0, vitC: 89.2, vitD: 0, vitE: 0.78, niacin: 0.64, phos: 66, mg: 21, cu: 0.05, mn: 0.21 },
+            { name: "杏仁", icon: "🌰", color: "#A0522D", kcal: 579, p: 21.2, f: 49.9, satFat: 3.8, transFat: 0.0, c: 21.6, fiber: 12.5, sugar: 4.4, ca: 269, fe: 3.7, zn: 3.1, se: 4.1, na: 1, k: 733, energy: Math.round(579 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.21, vitB2: 1.14, vitB6: 0.14, vitB12: 0, vitC: 0, vitD: 0, vitE: 25.63, niacin: 3.6, phos: 481, mg: 270, cu: 1.03, mn: 2.18 },
+            { name: "橄榄油", icon: "🫒", color: "#DAA520", kcal: 884, p: 0.0, f: 100.0, satFat: 14.0, transFat: 0.0, c: 0.0, fiber: 0.0, sugar: 0.0, ca: 1, fe: 0.6, zn: 0.0, se: 0.0, na: 2, k: 1, energy: Math.round(884 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.0, vitB2: 0.0, vitB6: 0.0, vitB12: 0, vitC: 0, vitD: 0, vitE: 14.35, niacin: 0.0, phos: 0, mg: 0, cu: 0.0, mn: 0.0 },
+            { name: "面粉", icon: "🍞", color: "#F5DEB3", kcal: 333, p: 10.3, f: 1.0, satFat: 0.2, transFat: 0.0, c: 72.6, fiber: 2.7, sugar: 0.3, ca: 15, fe: 1.2, zn: 0.7, se: 33.9, na: 2, k: 107, energy: Math.round(333 * 4.184), cholesterol: 0, vitA: 0, vitB1: 0.12, vitB2: 0.04, vitB6: 0.04, vitB12: 0, vitC: 0, vitD: 0, vitE: 0.06, niacin: 1.0, phos: 108, mg: 22, cu: 0.14, mn: 0.68 }
         ];
         let tareTimeout = null;
         
@@ -159,10 +447,12 @@
             const foodGrid = document.getElementById('food-grid');
             const pageIndicatorContainer = document.getElementById('page-indicator-container');
             const nutritionDisplay = document.getElementById('nutrition-display');
-            const weightDisplayNutrition = document.getElementById('weight-display-nutrition');
+            const weightEnergyDisplay = document.getElementById('weight-energy-display');
             const weightValue = document.getElementById('weight-value');
             const weightUnit = document.getElementById('weight-unit');
+            const energyValue = document.getElementById('energy-value');
             const nutrientDetailsContainer = document.getElementById('nutrient-details-container');
+            const nutritionScrollIndicator = document.getElementById('nutrition-scroll-indicator');
             
             const btnRotateLeft = document.getElementById('btn-rotate-left');
             const btnRotateRight = document.getElementById('btn-rotate-right');
@@ -263,22 +553,188 @@
                  else { return parseFloat(calculatedValue.toFixed(precision)); }
             }
 
+            // 计算每日营养素参考值百分比
+            function calculateDailyValuePercentage(nutrientKey, value) {
+                const dailyValue = dailyValues[nutrientKey];
+                if (!dailyValue || value <= 0) return 0;
+                
+                // 处理单位转换：铜的数据库存储单位是µg，但DV是mg
+                let adjustedValue = value;
+                if (nutrientKey === 'cu') {
+                    adjustedValue = value / 1000; // µg转换为mg
+                }
+                
+                const percentage = (adjustedValue / dailyValue) * 100;
+                return Math.round(percentage);
+            }
+
+            // 获取DV百分比的显示样式
+            function getDVPercentageClass(percentage) {
+                if (percentage >= 20) return 'dv-high';      // 高含量 (≥20%) - 红色警示
+                else if (percentage >= 10) return 'dv-medium'; // 中等含量 (10-19%) - 黄色注意
+                else if (percentage >= 5) return 'dv-low';     // 低含量 (5-9%) - 蓝色适中
+                else return 'dv-minimal';                      // 微量 (<5%) - 绿色安全
+            }
+
+            // 获取进度条颜色类（用于半圆图表）
+            function getProgressColorClass(percentage) {
+                if (percentage >= 20) return 'progress-high';      // ≥20% 红色警示
+                else if (percentage >= 10) return 'progress-medium'; // 10-19% 黄色注意
+                else if (percentage >= 5) return 'progress-low';     // 5-9% 蓝色适中
+                else return 'progress-minimal';                      // <5% 绿色安全
+            }
+
+            // 更新能量半圆图表
+            function updateEnergyChart(caloriesValue) {
+                const energyValue = document.getElementById('energy-value');
+                const energySemicircleBg = document.querySelector('.energy-semicircle-bg');
+                const energyPercentageLabel = document.getElementById('energy-percentage-label');
+                if (energyValue) {
+                    energyValue.textContent = caloriesValue;
+                }
+                if (energySemicircleBg && energyPercentageLabel) {
+                    const dvPercentage = calculateDailyValuePercentage('kcal', caloriesValue);
+                    // 先移除所有色彩class
+                    energySemicircleBg.classList.remove('color-high','color-medium','color-low','color-minimal');
+                    // 根据百分比加色彩class
+                    if (dvPercentage >= 20) energySemicircleBg.classList.add('color-high');
+                    else if (dvPercentage >= 10) energySemicircleBg.classList.add('color-medium');
+                    else if (dvPercentage >= 5) energySemicircleBg.classList.add('color-low');
+                    else energySemicircleBg.classList.add('color-minimal');
+                    // 百分比标签
+                    energyPercentageLabel.textContent = `${dvPercentage}%`;
+                    energyPercentageLabel.className = 'energy-percentage-label ' + getDVPercentageClass(dvPercentage);
+                }
+            }
+
+            // 更新总脂肪半圆图表
+            function updateFatChart(fatValue) {
+                const fatValueElement = document.getElementById('fat-value');
+                const fatSemicircleBg = document.querySelector('.fat-semicircle-bg');
+                const fatPercentageLabel = document.getElementById('fat-percentage-label');
+                if (fatValueElement) {
+                    fatValueElement.textContent = fatValue.toFixed(1);
+                }
+                if (fatSemicircleBg && fatPercentageLabel) {
+                    const dvPercentage = calculateDailyValuePercentage('f', fatValue);
+                    fatSemicircleBg.classList.remove('color-high','color-medium','color-low','color-minimal');
+                    if (dvPercentage >= 20) fatSemicircleBg.classList.add('color-high');
+                    else if (dvPercentage >= 10) fatSemicircleBg.classList.add('color-medium');
+                    else if (dvPercentage >= 5) fatSemicircleBg.classList.add('color-low');
+                    else fatSemicircleBg.classList.add('color-minimal');
+                    fatPercentageLabel.textContent = `${dvPercentage}%`;
+                    fatPercentageLabel.className = 'fat-percentage-label ' + getDVPercentageClass(dvPercentage);
+                }
+            }
+
             function populateNutrientDisplays() {
-                const allNutrientsGridEl = document.getElementById('all-nutrients-grid');
-                if (!allNutrientsGridEl) { return; }
-                let allNutrientsHTML = '';
-                nutrients.forEach((nutrient) => {
+                const majorNutrientsContainer = document.getElementById('major-nutrients-container');
+                const vitaminsGrid = document.getElementById('vitamins-grid');
+                const mineralsGrid = document.getElementById('minerals-grid');
+                
+                if (!majorNutrientsContainer || !vitaminsGrid || !mineralsGrid) { return; }
+                
+                // 主要营养素 - FDA层次结构
+                const majorNutrients = nutrients.filter(n => n.category === 'major' || n.category === 'fat-sub' || n.category === 'carb-sub');
+                let majorNutrientsHTML = '';
+                
+                // 主要营养素IconPark彩色SVG映射
+                const nutrientIcons = {
+                  'kcal': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><ellipse cx="24" cy="28" rx="16" ry="12" fill="#FFB300"/><path d="M24 6C24 6 28 13 28 18C28 23 24 28 24 28C24 28 20 23 20 18C20 13 24 6 24 6Z" fill="#FF7043" stroke="#FF7043" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="24" cy="28" rx="16" ry="12" stroke="#FF7043" stroke-width="2"/></g></svg>`, // 能量-火焰
+                  'f': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M24 6C24 6 36 18 36 28C36 36 24 42 24 42C24 42 12 36 12 28C12 18 24 6 24 6Z" fill="#FFD600" stroke="#FF9800" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="24" cy="28" rx="10" ry="7" fill="#FFF8E1"/></g></svg>`, // 总脂肪-油滴
+                  'satFat': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><ellipse cx="24" cy="28" rx="10" ry="7" fill="#FFECB3"/><ellipse cx="24" cy="28" rx="10" ry="7" stroke="#FFB300" stroke-width="2"/><ellipse cx="24" cy="28" rx="5" ry="3.5" fill="#FFB300"/></g></svg>`, // 饱和脂肪-黄椭圆
+                  'transFat': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><circle cx="24" cy="24" r="16" fill="#E57373"/><path d="M16 16L32 32" stroke="#fff" stroke-width="3" stroke-linecap="round"/><path d="M32 16L16 32" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g></svg>`, // 反式脂肪-红圈叉
+                  'cholesterol': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><ellipse cx="24" cy="32" rx="12" ry="8" fill="#FFF9C4"/><ellipse cx="24" cy="32" rx="12" ry="8" stroke="#FFD600" stroke-width="2"/><ellipse cx="24" cy="28" rx="6" ry="4" fill="#FFD600"/></g></svg>`, // 胆固醇-蛋黄
+                  'na': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><rect x="10" y="18" width="28" height="12" rx="6" fill="#B3E5FC" stroke="#0288D1" stroke-width="2"/><rect x="18" y="22" width="12" height="4" rx="2" fill="#0288D1"/></g></svg>`, // 钠-蓝色盐罐
+                  'c': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><rect x="8" y="20" width="32" height="16" rx="8" fill="#FFF3E0" stroke="#FF9800" stroke-width="2"/><rect x="16" y="28" width="16" height="4" rx="2" fill="#FF9800"/></g></svg>`, // 总碳水-橙色面包
+                  'fiber': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><path d="M24 8C24 8 32 16 32 24C32 32 24 40 24 40C24 40 16 32 16 24C16 16 24 8 24 8Z" fill="#C8E6C9" stroke="#388E3C" stroke-width="2"/><ellipse cx="24" cy="24" rx="6" ry="4" fill="#388E3C"/></g></svg>`, // 膳食纤维-绿色叶子
+                  'sugar': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><rect x="14" y="20" width="20" height="12" rx="6" fill="#FFF" stroke="#E91E63" stroke-width="2"/><circle cx="24" cy="26" r="3" fill="#E91E63"/></g></svg>`, // 糖-粉色糖块
+                  'p': `<svg width="1.5em" height="1.5em" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><g><rect x="12" y="16" width="24" height="16" rx="8" fill="#BBDEFB" stroke="#1976D2" stroke-width="2"/><rect x="20" y="24" width="8" height="4" rx="2" fill="#1976D2"/></g></svg>`, // 蛋白质-蓝色豆类
+                };
+                majorNutrients.forEach((nutrient) => {
                     const value = calculateSingleNutrient(nutrient.key, currentWeight);
-                    allNutrientsHTML += `<div class="nutrient-item">` +
-                                          `<span class="nutrient-name">${nutrient.name}</span>` +
-                                          `<span class="nutrient-value">${value}<span class="nutrient-unit">${nutrient.unit}</span></span>` +
-                                        `</div>`;
+                    const itemClass = nutrient.category === 'major' ? 'major-nutrient-item primary' : 'major-nutrient-item sub';
+                    // 计算Daily Value百分比
+                    let dvDisplay = '';
+                    if (nutrient.showDV && value > 0) {
+                        const dvPercentage = calculateDailyValuePercentage(nutrient.key, value);
+                        const dvClass = getDVPercentageClass(dvPercentage);
+                        dvDisplay = `<span class="dv-percentage ${dvClass}">${dvPercentage}%</span>`;
+                    }
+                    // 增加Remix Icon
+                    const iconHTML = nutrientIcons[nutrient.key] || '';
+                    majorNutrientsHTML += `<div class="${itemClass}">` +
+                        `<div style="display:flex;align-items:center;min-width:0;">
+                            ${iconHTML ? `<span class='nutrient-icon iconpark' style='margin-right:0.4em;vertical-align:middle;display:inline-flex;align-items:center;'>${iconHTML}</span>` : ''}
+                            <span class="nutrient-name">${nutrient.name}</span>
+                        </div>` +
+                        `<div class="nutrient-content">` +
+                            `<span class="nutrient-value">${value}<span class="nutrient-unit">${nutrient.unit}</span></span>` +
+                            dvDisplay +
+                        `</div>` +
+                    `</div>`;
                 });
-                allNutrientsGridEl.innerHTML = allNutrientsHTML;
+                
+                // 添加Daily Value说明
+                majorNutrientsHTML += `<div class="dv-explanation">*基于FDA每日营养素参考值计算</div>`;
+                majorNutrientsContainer.innerHTML = majorNutrientsHTML;
+                
+                // 维生素 - 保持原有紧凑网格，但添加DV百分比
+                const vitamins = nutrients.filter(n => n.category === 'vitamins');
+                let vitaminsHTML = '';
+                vitamins.forEach((nutrient) => {
+                    const value = calculateSingleNutrient(nutrient.key, currentWeight);
+                    
+                    // 为维生素添加DV百分比显示
+                    let dvBadge = '';
+                    if (nutrient.showDV && value > 0) {
+                        const dvPercentage = calculateDailyValuePercentage(nutrient.key, value);
+                        if (dvPercentage >= 5) { // 只显示≥5%的百分比
+                            const dvClass = getDVPercentageClass(dvPercentage);
+                            dvBadge = `<div class="mini-dv ${dvClass}">${dvPercentage}%</div>`;
+                        }
+                    }
+                    
+                    vitaminsHTML += `<div class="nutrient-mini-card">` +
+                                      `<span class="mini-name">${nutrient.name}</span>` +
+                                      `<span class="mini-value">${value}<span class="mini-unit">${nutrient.unit}</span></span>` +
+                                      dvBadge +
+                                    `</div>`;
+                });
+                vitaminsGrid.innerHTML = vitaminsHTML;
+                
+                // 矿物质 - 保持原有紧凑网格，但添加DV百分比
+                const minerals = nutrients.filter(n => n.category === 'minerals');
+                let mineralsHTML = '';
+                minerals.forEach((nutrient) => {
+                    const value = calculateSingleNutrient(nutrient.key, currentWeight);
+                    
+                    // 为矿物质添加DV百分比显示
+                    let dvBadge = '';
+                    if (nutrient.showDV && value > 0) {
+                        const dvPercentage = calculateDailyValuePercentage(nutrient.key, value);
+                        if (dvPercentage >= 5) { // 只显示≥5%的百分比
+                            const dvClass = getDVPercentageClass(dvPercentage);
+                            dvBadge = `<div class="mini-dv ${dvClass}">${dvPercentage}%</div>`;
+                        }
+                    }
+                    
+                    mineralsHTML += `<div class="nutrient-mini-card">` +
+                                      `<span class="mini-name">${nutrient.name}</span>` +
+                                      `<span class="mini-value">${value}<span class="mini-unit">${nutrient.unit}</span></span>` +
+                                      dvBadge +
+                                    `</div>`;
+                });
+                mineralsGrid.innerHTML = mineralsHTML;
+                
+                // 生成营养滚动指示器
+                setTimeout(() => {
+                    generateNutritionScrollIndicator();
+                }, 100); // 延迟一点让DOM更新完成
             }
 
             function updateUI() {
-                if (!mainContent || !statusPrompt || !foodSelection || !nutritionDisplay || !hintBar || !foodGrid || !weightDisplayNutrition || !nutrientDetailsContainer || !btnAddWeight || !btnResetWeight) { return; }
+                if (!mainContent || !statusPrompt || !foodSelection || !nutritionDisplay || !hintBar || !foodGrid || !weightEnergyDisplay || !nutrientDetailsContainer || !btnAddWeight) { return; }
                 const isWeighing = currentWeight > 0.05;
                 foodSelection.classList.toggle('hidden', isFoodConfirmed);
                 nutritionDisplay.classList.toggle('hidden', !isFoodConfirmed);
@@ -297,6 +753,13 @@
                     const formattedWeight = formatWeight(currentWeight);
                     if (weightValue) weightValue.textContent = formattedWeight.value;
                     if (weightUnit) { weightUnit.textContent = formattedWeight.unit; weightUnit.className = 'weight-unit'; if (unitColors[formattedWeight.unit]) { weightUnit.classList.add(unitColors[formattedWeight.unit]); }}
+                    
+                    // 更新能量和总脂肪半圆图表
+                    const caloriesValue = calculateSingleNutrient('kcal', currentWeight);
+                    const fatValue = calculateSingleNutrient('f', currentWeight);
+                    updateEnergyChart(caloriesValue);
+                    updateFatChart(fatValue);
+                    
                     populateNutrientDisplays();
                     hintTextVal = isWeighing ? "旋转查看更多 | 短按去皮" : "旋转切换单位｜短按去皮";
                     shortPressAction = 'TARE';
@@ -334,13 +797,14 @@
                  itemsToDisplay.forEach((food) => {
                       const item = document.createElement('div');
                       item.classList.add('food-item');
-                      
-                      // 创建图标元素
-                      const iconElement = document.createElement('i');
-                      iconElement.className = food.icon;
-                      iconElement.style.color = food.color;
+                      // 使用更大的 emoji 作为图标
+                      const iconElement = document.createElement('span');
+                      iconElement.textContent = food.icon;
+                      iconElement.style.fontSize = '2.8em';
+                      iconElement.style.fontWeight = 'bold';
+                      iconElement.style.display = 'block';
+                      iconElement.style.margin = '0 auto 6px auto';
                       item.appendChild(iconElement);
-                      
                       foodGrid.appendChild(item);
                       foodItemElements.push(item);
                  });
@@ -367,8 +831,66 @@
                     pageIndicatorContainer.appendChild(dot);
                 }
             }
+
+            function generateNutritionScrollIndicator() {
+                if (!nutritionScrollIndicator || !nutrientDetailsContainer) return;
+                
+                // 计算需要的页面数量
+                const containerHeight = nutrientDetailsContainer.clientHeight;
+                const scrollHeight = nutrientDetailsContainer.scrollHeight;
+                const totalPages = Math.ceil(scrollHeight / containerHeight);
+                
+                // 如果内容不需要滚动，隐藏指示器
+                if (totalPages <= 1) {
+                    nutritionScrollIndicator.classList.remove('visible');
+                    return;
+                }
+                
+                // 显示指示器并生成圆点
+                nutritionScrollIndicator.classList.add('visible');
+                nutritionScrollIndicator.innerHTML = '';
+                
+                for (let i = 0; i < totalPages; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('nutrition-scroll-dot');
+                    nutritionScrollIndicator.appendChild(dot);
+                }
+                
+                updateNutritionScrollIndicator();
+            }
+
+            function updateNutritionScrollIndicator() {
+                if (!nutritionScrollIndicator || !nutrientDetailsContainer) return;
+                
+                const containerHeight = nutrientDetailsContainer.clientHeight;
+                const scrollTop = nutrientDetailsContainer.scrollTop;
+                const scrollHeight = nutrientDetailsContainer.scrollHeight;
+                const totalPages = Math.ceil(scrollHeight / containerHeight);
+                
+                if (totalPages <= 1) return;
+                
+                // 计算当前页面
+                const currentPage = Math.floor(scrollTop / containerHeight);
+                const dots = nutritionScrollIndicator.querySelectorAll('.nutrition-scroll-dot');
+                
+                dots.forEach((dot, index) => {
+                    if (index === currentPage) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            }
             
-            function resetScale() { currentWeight = 0.0; isFoodConfirmed = false; selectedFoodIndex = 0; currentUnitIndex = 0; if(nutrientDetailsContainer) nutrientDetailsContainer.scrollTop = 0; updateUI(); }
+            function resetScale() { 
+                currentWeight = 0.0; 
+                isFoodConfirmed = false; 
+                selectedFoodIndex = 0; 
+                currentUnitIndex = 0; 
+                if(nutrientDetailsContainer) nutrientDetailsContainer.scrollTop = 0; 
+                if(nutritionScrollIndicator) nutritionScrollIndicator.classList.remove('visible');
+                updateUI(); 
+            }
             function simulateAddWeight() { if (isFoodConfirmed) { currentWeight += Math.random() * 200 + 50; updateUI(); } }
             function simulateResetWeight() { if (isFoodConfirmed) { currentWeight = 0.0; updateUI(); } }
 
@@ -379,7 +901,13 @@
             function handleRotate(direction) {
                  if (isFoodConfirmed) {
                      const isWeighing = currentWeight > 0.05;
-                     if (isWeighing && nutrientDetailsContainer) { nutrientDetailsContainer.scrollBy({ top: direction * nutrientDetailsContainer.clientHeight * 0.6, behavior: 'smooth' }); } 
+                     if (isWeighing && nutrientDetailsContainer) { 
+                         nutrientDetailsContainer.scrollBy({ top: direction * nutrientDetailsContainer.clientHeight * 0.6, behavior: 'smooth' }); 
+                         // 更新滚动指示器
+                         setTimeout(() => {
+                             updateNutritionScrollIndicator();
+                         }, 300); // 等待滚动动画完成
+                     } 
                      else { currentUnitIndex = (currentUnitIndex + direction + units.length) % units.length; updateUI(); }
                  } else {
                      const oldIndex = selectedFoodIndex;
@@ -429,7 +957,7 @@
 
             function updateLongPressHintText() { 
                 currentLongPressDuration = Date.now() - longPressStartTime;
-                let remainingSecondsForPowerOff;
+                               let remainingSecondsForPowerOff;
                 if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
                     remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
                     if (hintBar) { hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`; }
