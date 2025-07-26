@@ -22,19 +22,6 @@ cd nutrition_scale_project
 
 无需安装任何依赖或本地服务器！
 
-### 🎨 连接Figma（可选）
-
-如果您想连接Figma设计文件来同步设计资源：
-
-```bash
-# 运行配置向导
-npm run setup-figma
-
-# 启动Figma MCP服务器
-npm run start-figma
-```
-
-详细配置说明请查看 [Figma MCP文档](./mcp-figma/README.md)
 
 ## 🎯 功能特性
 
@@ -73,16 +60,8 @@ nutrition_scale_project/
 ├── Power_off.html                   # 返回与关机演示
 ├── charging_status.html             # 充电状态
 ├── overload_prompt.html             # 超载提示
-├── mcp-figma/                       # Figma MCP服务器
-│   ├── index.js                     # MCP服务器主文件
-│   ├── package.json                 # 依赖配置
-│   ├── README.md                    # MCP详细文档
-│   └── .env.example                 # 配置示例
 ├── .vscode/                         # VS Code配置
-├── setup-figma.sh                   # Figma配置向导
-├── test-figma.sh                    # 测试脚本
-├── FIGMA_SETUP.md                   # 快速使用指南
-└── FIGMA_EXAMPLES.md                # 使用示例
+└── ...（其余页面和资源文件）
 ```
 
 ## 🎮 使用说明
@@ -93,22 +72,7 @@ nutrition_scale_project/
 3. 使用底部控制按钮模拟设备交互
 4. 通过"返回目录"按钮随时回到导航页面
 
-### 🎨 Figma集成使用
-```bash
-# 快速配置
-npm run setup-figma
 
-# 启动MCP服务器
-npm run start-figma
-
-# 测试配置
-npm run test-figma
-```
-
-详细说明请查看：
-- [快速使用指南](./FIGMA_SETUP.md)
-- [使用示例](./FIGMA_EXAMPLES.md)
-- [完整文档](./mcp-figma/README.md)
 
 ### 交互控制
 每个页面底部都有模拟控制按钮：
@@ -124,28 +88,8 @@ npm run test-figma
 - **FontAwesome**：图标库
 - **响应式设计**：适配不同屏幕尺寸
 - **深色主题**：模拟真实设备外观
-- **Figma MCP集成**：可选的设计文件同步功能
 
-## 🔗 Figma集成
 
-项目包含了一个自定义的Figma MCP（Model Context Protocol）服务器，可以：
-
-- 📄 获取Figma设计文件信息
-- 🖼️ 导出设计资源和图片
-- 🎨 同步设计令牌（颜色、字体等）
-- 📦 获取组件和样式信息
-
-### 配置Figma连接
-
-```bash
-# 运行配置向导
-npm run setup-figma
-
-# 启动MCP服务器
-npm run start-figma
-```
-
-更多详情请查看 [mcp-figma/README.md](./mcp-figma/README.md)
 
 ## 👤 作者
 
