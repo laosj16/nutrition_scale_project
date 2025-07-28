@@ -14,23 +14,14 @@
         .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 32px; }
         .status-bar i { font-size: 18px; color: #e0e0e0; line-height: 1; }
-        .menu-name { font-size: 16px; font-weight: 500; color: #e0e0e0; text-align: center; flex: 1; }
         .main-content { flex-grow: 1; display: flex; align-items: center; overflow: hidden; position: relative; }
         .menu-carousel { display: flex; align-items: center; padding: 0; position: absolute; left: 0; will-change: transform; }
-        .menu-item { flex: 0 0 auto; width: 120px; height: 120px; margin: 0 15px; background-color: #333; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: default; transition: transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease; border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; }
-        .menu-item i { font-size: 50px; color: #e0e0e0; transition: color 0.2s ease; line-height: 1; }
-        
-        /* Individual menu item colors */
-        .menu-item[data-name="营养秤"] { background: linear-gradient(135deg, #10B981, #059669); }
-        .menu-item[data-name="通用称重"] { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
-        .menu-item[data-name="倒计时"] { background: linear-gradient(135deg, #F59E0B, #D97706); }
-        .menu-item[data-name="设置"] { background: linear-gradient(135deg, #8B5CF6, #7C3AED); }
-        
-        /* Hover effects for non-selected items */
-        .menu-item:not(.selected):hover { transform: scale(1.05); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        
-        .menu-item.selected { transform: scale(1.25); z-index: 1; box-shadow: 0 8px 20px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.3); border-color: rgba(255,255,255,0.5); }
-        .menu-item.selected i { color: #ffffff; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .menu-item { flex: 0 0 auto; width: 120px; height: 120px; margin: 0 15px; background-color: #333; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: default; transition: transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease; border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; }
+        .menu-item i { font-size: 40px; color: #e0e0e0; margin-bottom: 8px; transition: color 0.2s ease; line-height: 1; }
+        .menu-item span { font-size: 14px; font-weight: 500; color: #e0e0e0; transition: color 0.2s ease; }
+        .menu-item.selected { transform: scale(1.25); background-color: #007AFF; border-color: #0056b3; z-index: 1; box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+        .menu-item.selected i { color: #ffffff; }
+        .menu-item.selected span { color: #ffffff; }
         .hint-bar { text-align: center; padding: 8px 10px 10px 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: auto; min-height: 32px; }
         .hint-bar.long-press-active { color: #ffffff; /* White text during long press */ }
         @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
@@ -55,19 +46,18 @@
     <div class="device-screen">
         <div class="status-bar">
             <i class="fa-brands fa-bluetooth-b"></i>
-            <span id="current-menu-name" class="menu-name">营养秤</span>
             <i class="fa-solid fa-battery-full"></i>
         </div>
         <div class="main-content">
             <div class="menu-carousel">
-                <div class="menu-item clone" data-target="settings_menu.html" data-name="设置"><i class="fa-solid fa-gear"></i></div>
-                <div class="menu-item clone" data-target="timed_weighing.html" data-name="倒计时"><i class="fa-solid fa-clock"></i></div>
-                <div class="menu-item original" data-target="nutrition_scale.html" data-name="营养秤"><i class="fa-solid fa-apple-whole"></i></div>
-                <div class="menu-item original" data-target="general_weighing.html" data-name="通用称重"><i class="fa-solid fa-weight-scale"></i></div>
-                <div class="menu-item original" data-target="timed_weighing.html" data-name="倒计时"><i class="fa-solid fa-clock"></i></div>
-                <div class="menu-item original" data-target="settings_menu.html" data-name="设置"><i class="fa-solid fa-gear"></i></div>
-                <div class="menu-item clone" data-target="nutrition_scale.html" data-name="营养秤"><i class="fa-solid fa-apple-whole"></i></div>
-                <div class="menu-item clone" data-target="general_weighing.html" data-name="通用称重"><i class="fa-solid fa-weight-scale"></i></div>
+                <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
+                <div class="menu-item clone" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
+                <div class="menu-item original" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
+                <div class="menu-item original" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
+                <div class="menu-item original" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
+                <div class="menu-item original" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
+                <div class="menu-item clone" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
+                <div class="menu-item clone" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
             </div>
         </div>
         <div class="page-indicator-container">
@@ -82,7 +72,7 @@
         <button id="btn-rotate-left" class="control-button" title="模拟向左旋转">← 旋转</button>
         <button id="btn-rotate-right" class="control-button" title="模拟向右旋转">旋转 →</button>
         <button id="btn-short-press" class="control-button" title="模拟短按确认">确认 (短按)</button>
-        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (关机)</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回首页/关机)</button>
         <button id="btn-return-index" class="control-button secondary" title="返回目录页面">返回目录</button>
     </div>
 
@@ -93,7 +83,6 @@
         const mainContent = document.querySelector('.main-content');
         const hintBar = document.querySelector('.hint-bar');
         const pageIndicatorContainer = document.querySelector('.page-indicator-container');
-        const currentMenuName = document.getElementById('current-menu-name');
 
         // Interaction Buttons
         const btnRotateLeft = document.getElementById('btn-rotate-left');
@@ -147,15 +136,6 @@
             allItems.forEach(item => item.classList.remove('selected'));
             allItems[currentDisplayIndex].classList.add('selected');
             updatePageIndicator();
-            updateMenuName();
-        }
-
-        function updateMenuName() {
-            const selectedItem = allItems[currentDisplayIndex];
-            const menuName = selectedItem?.getAttribute('data-name') || '';
-            if (currentMenuName) {
-                currentMenuName.textContent = menuName;
-            }
         }
 
         function handleLoopingJump() {
@@ -278,7 +258,8 @@
             if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
                 remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
                 if (hintBar) {
-                    hintBar.innerHTML = `长按返回上级  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
+                    // 主菜单页面显示"返回首页"而不是"返回"
+                    hintBar.innerHTML = `长按返回首页  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                 }
                 if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
                     currentLongPressAction = LONG_PRESS_ACTION_NONE; 
@@ -309,8 +290,9 @@
 
             // Execute action based on duration when button is released
             if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
-                console.log("Executing Return Action (返回上一级菜单)...");
-                window.location.href = 'index.html'; // Return to index page (上一级菜单)
+                console.log("Executing Return Action (返回首页)...");
+                // 主菜单页面没有上一级菜单，直接返回首页
+                window.location.href = 'index.html';
             } else { 
                 console.log("Long press cancelled (不足1秒).");
             }
