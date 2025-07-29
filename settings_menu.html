@@ -344,13 +344,6 @@
             }
 
             function rotate(direction) {
-                if (isPowerConfirmActive) { 
-                    powerConfirmSelection = (powerConfirmSelection === 'cancel') ? 'power-off' : 'cancel'; 
-                    updatePowerConfirmSelection(); 
-                    resetPowerConfirmTimeout(); 
-                    return; 
-                }
-                
                 const startIndex = currentPage * pageSize;
                 const endIndex = Math.min(startIndex + pageSize, settingsItems.length);
                 const itemsOnCurrentPage = endIndex - startIndex;
@@ -404,27 +397,9 @@
                          currentBrightnessLevel = 1;
                      }
                      updateBrightnessVisual();
-                     if(statusPrompt) {
-                        const brightnessPercentage = currentBrightnessLevel * (100 / TOTAL_BRIGHTNESS_LEVELS);
-                        statusPrompt.textContent = `亮度: ${brightnessPercentage}%`;
-                        setTimeout(() => {
-                            if (statusPrompt.textContent === `亮度: ${brightnessPercentage}%`) {
-                                statusPrompt.textContent = "设置";
-                            }
-                        }, 1500);
-                     }
                  } else if (selectedItemElement.id === 'sound-control-item') {
                     isSoundOn = !isSoundOn;
                     updateSoundToggleVisual();
-                    if(statusPrompt) {
-                        const soundStatusText = `声音: ${isSoundOn ? '开' : '关'}`;
-                        statusPrompt.textContent = soundStatusText;
-                        setTimeout(() => {
-                            if (statusPrompt.textContent === soundStatusText) {
-                                statusPrompt.textContent = "设置";
-                            }
-                        }, 1500);
-                    }
                  } else {
                      const targetPage = selectedItemElement.getAttribute('data-target');
                      if (targetPage) {
