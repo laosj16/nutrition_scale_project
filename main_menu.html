@@ -14,14 +14,21 @@
         .device-screen { width: 100%; max-width: 480px; aspect-ratio: 4 / 3; background-color: #1a1a1a; color: #e0e0e0; border-radius: 0.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; overflow: hidden; position: relative; }
         .status-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background-color: rgba(0, 0, 0, 0.2); flex-shrink: 0; height: 32px; }
         .status-bar i { font-size: 18px; color: #e0e0e0; line-height: 1; }
+        .status-bar .title { font-size: 16px; font-weight: 500; color: #e0e0e0; position: absolute; left: 50%; transform: translateX(-50%); }
         .main-content { flex-grow: 1; display: flex; align-items: center; overflow: hidden; position: relative; }
         .menu-carousel { display: flex; align-items: center; padding: 0; position: absolute; left: 0; will-change: transform; }
-        .menu-item { flex: 0 0 auto; width: 120px; height: 120px; margin: 0 15px; background-color: #333; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: default; transition: transform 0.3s ease-out, background-color 0.2s ease, border-color 0.2s ease; border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; }
-        .menu-item i { font-size: 40px; color: #e0e0e0; margin-bottom: 8px; transition: color 0.2s ease; line-height: 1; }
-        .menu-item span { font-size: 14px; font-weight: 500; color: #e0e0e0; transition: color 0.2s ease; }
-        .menu-item.selected { transform: scale(1.25); background-color: #007AFF; border-color: #0056b3; z-index: 1; box-shadow: 0 6px 12px rgba(0,0,0,0.3); }
+        .menu-item { flex: 0 0 auto; width: 120px; height: 120px; margin: 0 15px; background-color: #333; border-radius: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: default; transition: all 0.3s ease-out; border: 2px solid transparent; box-shadow: 0 2px 4px rgba(0,0,0,0.2); text-align: center; opacity: 0.6; }
+        .menu-item i { font-size: 48px; color: #e0e0e0; margin-bottom: 0; transition: color 0.2s ease; line-height: 1; }
+        .menu-item span { display: none; }
+        .menu-item.selected { transform: scale(1.25); border-width: 4px; border-color: rgba(255, 255, 255, 0.4); z-index: 1; box-shadow: 0 6px 12px rgba(0,0,0,0.3); opacity: 1; }
         .menu-item.selected i { color: #ffffff; }
         .menu-item.selected span { color: #ffffff; }
+
+        /* Custom Colors */
+        .menu-item[data-target*="countdown"] { background-color: #fbbf24; } /* Yellow */
+        .menu-item[data-target*="general_weighing"] { background-color: #34d399; } /* Green */
+        .menu-item[data-target*="nutrition_scale"] { background-color: #ef4444; } /* Red */
+        .menu-item[data-target*="settings_menu"] { background-color: #60a5fa; } /* Blue */
         .hint-bar { text-align: center; padding: 8px 10px 10px 10px; background-color: rgba(0, 0, 0, 0.3); font-size: 15px; color: #b0b0b0; flex-shrink: 0; height: auto; min-height: 32px; }
         .hint-bar.long-press-active { color: #ffffff; /* White text during long press */ }
         @keyframes blink-text-animation { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
@@ -46,17 +53,18 @@
     <div class="device-screen">
         <div class="status-bar">
             <i class="fa-brands fa-bluetooth-b"></i>
+            <span class="title"></span>
             <i class="fa-solid fa-battery-full"></i>
         </div>
         <div class="main-content">
             <div class="menu-carousel">
-                <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
-                <div class="menu-item clone" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
-                <div class="menu-item original" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
-                <div class="menu-item original" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
-                <div class="menu-item original" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
-                <div class="menu-item original" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
                 <div class="menu-item clone" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
+                <div class="menu-item clone" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
+                <div class="menu-item original" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
+                <div class="menu-item original" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
+                <div class="menu-item original" data-target="nutrition_scale.html"><i class="fa-solid fa-apple-whole"></i><span>营养秤</span></div>
+                <div class="menu-item original" data-target="settings_menu.html"><i class="fa-solid fa-gear"></i><span>设置</span></div>
+                <div class="menu-item clone" data-target="countdown.html"><i class="fa-solid fa-clock"></i><span>倒计时</span></div>
                 <div class="menu-item clone" data-target="general_weighing.html"><i class="fa-solid fa-weight-scale"></i><span>通用称重</span></div>
             </div>
         </div>
@@ -81,6 +89,7 @@
         const menuCarousel = document.querySelector('.menu-carousel');
         const allItems = menuCarousel.querySelectorAll('.menu-item');
         const mainContent = document.querySelector('.main-content');
+        const statusBarTitle = document.querySelector('.status-bar .title');
         const hintBar = document.querySelector('.hint-bar');
         const pageIndicatorContainer = document.querySelector('.page-indicator-container');
 
@@ -94,7 +103,7 @@
         // --- State Variables ---
         const CLONES_COUNT = 2;
         const ORIGINAL_ITEMS_COUNT = 4;
-        let currentLogicalIndex = 0; // 营养秤作为第一个显示
+        let currentLogicalIndex = 2; // 默认选择营养秤 (索引为2)
         let currentDisplayIndex = CLONES_COUNT + currentLogicalIndex;
         let isTransitioning = false;
         let transitionTimeout = null;
@@ -134,7 +143,13 @@
             
             // 更新选中状态
             allItems.forEach(item => item.classList.remove('selected'));
-            allItems[currentDisplayIndex].classList.add('selected');
+            const selectedItem = allItems[currentDisplayIndex];
+            selectedItem.classList.add('selected');
+            
+            // 更新状态栏标题
+            const titleText = selectedItem.querySelector('span').textContent;
+            statusBarTitle.textContent = titleText;
+
             updatePageIndicator();
         }
 
