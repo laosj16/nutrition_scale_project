@@ -287,7 +287,14 @@
             function handleShortPress() {
                  switch (currentState) {
                      case State.SETTING_MINUTES: setState(State.SETTING_SECONDS); break;
-                     case State.SETTING_SECONDS: startCountdown(); break;
+                     case State.SETTING_SECONDS:
+                         // 如果时间设置为00:00，短按返回分钟设置
+                         if (setMinutes === 0 && setSeconds === 0) {
+                             setState(State.SETTING_MINUTES);
+                         } else {
+                             startCountdown();
+                         }
+                         break;
                      case State.RUNNING: pauseCountdown(); break;
                      case State.PAUSED: resumeCountdown(); break;
                      case State.FINISHED: resetTimer(); break;
