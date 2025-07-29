@@ -102,6 +102,24 @@
         .mini-dv { position: absolute; top: 6px; right: 8px; font-size: 14px; font-weight: 600; padding: 2px 7px; border-radius: 4px; line-height: 1.1; min-width: 32px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.10); background: rgba(255,255,255,0.10); }
         .vitamins-section .section-title { color: #34d399; border-color: rgba(52, 211, 153, 0.3); }
         .minerals-section .section-title { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+        
+        /* 维生素页面颜色设计 */
+        .vitamins-section .nutrient-mini-card { 
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.15), rgba(52, 211, 153, 0.05)); 
+            border: 1px solid rgba(52, 211, 153, 0.3); 
+        }
+        .vitamins-section .nutrient-mini-card .mini-name { color: #6ee7b7; }
+        .vitamins-section .nutrient-mini-card .mini-value-container { color: #34d399; }
+        .vitamins-section .nutrient-mini-card .mini-unit { color: #a7f3d0; }
+        
+        /* 矿物质页面颜色设计 */
+        .minerals-section .nutrient-mini-card { 
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05)); 
+            border: 1px solid rgba(251, 191, 36, 0.3); 
+        }
+        .minerals-section .nutrient-mini-card .mini-name { color: #fcd34d; }
+        .minerals-section .nutrient-mini-card .mini-value-container { color: #fbbf24; }
+        .minerals-section .nutrient-mini-card .mini-unit { color: #fde68a; }
 
         /* 通用组件 */
         .tare-indicator { position: absolute; top: 10px; left: 10px; background-color: #007AFF; color: white; padding: 3px 8px; border-radius: 5px; font-size: 14px; font-weight: bold; opacity: 0; transition: opacity 0.2s ease-out; z-index: 5; }
@@ -205,21 +223,18 @@
                     <div id="nutrition-page-5" class="nutrition-page">
                         <div class="nutrition-section vitamins-section" style="width: 100%;">
                             <div class="section-title">维生素</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="vitamins-grid-1" class="nutrients-grid"></div>
                         </div>
                     </div>
                      <div id="nutrition-page-6" class="nutrition-page">
                         <div class="nutrition-section vitamins-section" style="width: 100%;">
                             <div class="section-title">维生素</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="vitamins-grid-2" class="nutrients-grid"></div>
                         </div>
                     </div>
                      <div id="nutrition-page-7" class="nutrition-page">
                         <div class="nutrition-section vitamins-section" style="width: 100%;">
                             <div class="section-title">维生素</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="vitamins-grid-3" class="nutrients-grid"></div>
                         </div>
                     </div>
@@ -227,21 +242,18 @@
                     <div id="nutrition-page-8" class="nutrition-page">
                         <div class="nutrition-section minerals-section" style="width: 100%;">
                             <div class="section-title">矿物质</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="minerals-grid-1" class="nutrients-grid"></div>
                         </div>
                     </div>
                     <div id="nutrition-page-9" class="nutrition-page">
                         <div class="nutrition-section minerals-section" style="width: 100%;">
                             <div class="section-title">矿物质</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="minerals-grid-2" class="nutrients-grid"></div>
                         </div>
                     </div>
                     <div id="nutrition-page-10" class="nutrition-page">
                         <div class="nutrition-section minerals-section" style="width: 100%;">
                             <div class="section-title">矿物质</div>
-                            <div class="dv-explanation">*基于FDA每日营养素参考值计算</div>
                             <div id="minerals-grid-3" class="nutrients-grid"></div>
                         </div>
                     </div>
@@ -437,19 +449,9 @@
                     const nutrient = nutrientsMap[key];
                     if (!nutrient) return;
                     const value = calculateSingleNutrient(key, currentWeight);
-                    
-                    let dvBadge = '';
-                    if (nutrient.showDV) {
-                        const dvPercentage = calculateDVPercentage(key, value);
-                        if (dvPercentage >= 5) { // Only show if 5% or more
-                            const dvClass = getDVClass(dvPercentage);
-                            dvBadge = `<div class="mini-dv ${dvClass}">${dvPercentage}%</div>`;
-                        }
-                    }
 
                     container.innerHTML += `
                         <div class="nutrient-mini-card">
-                            ${dvBadge}
                             <span class="mini-name">${nutrient.name}</span>
                             <div class="mini-value-container">
                                 <span class="mini-value">${value}</span>
