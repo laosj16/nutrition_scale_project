@@ -224,16 +224,6 @@
         <div id="hint-bar" class="hint-bar">
             旋转选择, 短按确认
         </div>
-
-        <div id="long-press-overlay" class="overlay">
-             <div class="progress-ring"> <svg class="progress-ring__svg" width="90" height="90"> <circle class="progress-ring__circle progress-ring__circle--background" fill="transparent" r="42" cx="45" cy="45"/> <circle id="progress-circle" class="progress-ring__circle" stroke="#007AFF" stroke-linecap="round" fill="transparent" r="42" cx="45" cy="45"/> </svg> <span id="progress-text" class="progress-ring__text"></span> </div>
-            <p id="long-press-action-text" class="mt-1 text-lg"></p>
-        </div>
-        <div id="power-off-confirm-overlay" class="overlay">
-            <p class="text-xl mb-4">确认关机?</p>
-            <div class="confirm-options"> <span id="confirm-cancel" class="option selected">取消</span> <span id="confirm-power-off" class="option">确认</span> </div>
-            <p class="text-sm mt-4 text-gray-400">旋转选择, 短按确认 (3秒后自动取消)</p>
-        </div>
     </div>
 
     <div class="interaction-controls">
@@ -251,13 +241,6 @@
             const settingsList = document.querySelector('.settings-list');
             const settingsItems = settingsList.querySelectorAll('.settings-item');
             const hintBar = document.getElementById('hint-bar');
-            const longPressOverlay = document.getElementById('long-press-overlay');
-            const progressCircle = document.getElementById('progress-circle');
-            const progressText = document.getElementById('progress-text');
-            const longPressActionText = document.getElementById('long-press-action-text');
-            const powerOffConfirmOverlay = document.getElementById('power-off-confirm-overlay');
-            const confirmCancelBtn = document.getElementById('confirm-cancel');
-            const confirmPowerOffBtn = document.getElementById('confirm-power-off');
             const btnRotateLeft = document.getElementById('btn-rotate-left');
             const btnRotateRight = document.getElementById('btn-rotate-right');
             const btnShortPress = document.getElementById('btn-short-press');
@@ -271,12 +254,17 @@
             let selectedIndex = 0;
             let currentPage = 0; // 当前页面索引
             const pageSize = 2; // 每页显示2个设置项
-            let longPressTimer = null; let longPressStartTime = 0; let currentLongPressDuration = 0;
-            let longPressActive = false; let longPressThresholdMet = false;
-            const SHOW_OVERLAY_DURATION = 1000; const POWER_CONFIRM_DURATION = 5000;
-            const POWER_CONFIRM_TIMEOUT_DURATION = 3000; const LONG_PRESS_COLOR_BACK = '#007AFF';
-            let isPowerConfirmActive = false; let powerConfirmSelection = 'cancel'; let powerConfirmTimeout = null;
-            const radius = 42; const circumference = radius * 2 * Math.PI;
+            
+            // --- Long Press State ---
+            let longPressTimer = null;
+            let longPressStartTime = 0;
+            let currentLongPressDuration = 0;
+            let longPressActive = false;
+            const LONG_PRESS_RETURN_DURATION = 1000;
+            const LONG_PRESS_POWER_OFF_DURATION = 5000;
+            const LONG_PRESS_ACTION_NONE = 0;
+            const LONG_PRESS_ACTION_RETURN = 1;
+            let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
             // --- Language Control State ---
             const languages = ['中文简体', '中文繁體', 'English', '한국어', '日本語'];
@@ -407,8 +395,6 @@
             }
 
             function handleShortPress() {
-                 if (isPowerConfirmActive) { clearTimeout(powerConfirmTimeout); if (powerConfirmSelection === 'power-off') { simulatePowerOff(); } else { hidePowerConfirm(); } return; }
-
                  const selectedItemElement = settingsItems[selectedIndex];
                  if (!selectedItemElement) return;
 
@@ -455,15 +441,74 @@
             }
 
             // --- Power Off & Long Press Logic ---
-            function showPowerConfirm() { isPowerConfirmActive = true; powerConfirmSelection = 'cancel'; updatePowerConfirmSelection(); if(powerOffConfirmOverlay) powerOffConfirmOverlay.classList.add('visible'); if(hintBar) hintBar.textContent = "旋转选择, 短按确认"; resetPowerConfirmTimeout(); }
-            function hidePowerConfirm() { if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout); isPowerConfirmActive = false; if(powerOffConfirmOverlay) powerOffConfirmOverlay.classList.remove('visible'); if(hintBar) hintBar.textContent = "旋转选择, 短按确认"; }
-            function updatePowerConfirmSelection() { if(confirmCancelBtn && confirmPowerOffBtn){ confirmCancelBtn.classList.toggle('selected', powerConfirmSelection === 'cancel'); confirmPowerOffBtn.classList.toggle('selected', powerConfirmSelection === 'power-off');} }
-            function resetPowerConfirmTimeout() { if (powerConfirmTimeout) clearTimeout(powerConfirmTimeout); powerConfirmTimeout = setTimeout(() => { console.log("Power confirm timed out."); hidePowerConfirm(); }, POWER_CONFIRM_TIMEOUT_DURATION); }
-            function simulatePowerOff() { console.log("Simulating Power Off..."); if(powerOffConfirmOverlay) powerOffConfirmOverlay.innerHTML = '<p class="text-2xl">关机...</p>'; disableAllButtons(); }
-            function disableAllButtons() { [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {if(btn) btn.disabled = true;}); } // Removed btnToggleLanguage
-            function setProgress(percent) { if(!progressCircle) return; const offset = circumference - percent / 100 * circumference; progressCircle.style.strokeDashoffset = offset; }
-            function startLongPress() { if (longPressActive || isPowerConfirmActive || !longPressOverlay) return; longPressActive = true; longPressThresholdMet = false; longPressStartTime = Date.now(); currentLongPressDuration = 0; longPressOverlay.classList.remove('visible'); setProgress(0); const updateProgress = () => { if (!longPressActive) return; const elapsedTime = Date.now() - longPressStartTime; currentLongPressDuration = elapsedTime; if (!longPressThresholdMet && elapsedTime >= SHOW_OVERLAY_DURATION) { longPressThresholdMet = true; if(progressCircle) progressCircle.setAttribute('stroke', LONG_PRESS_COLOR_BACK); if(longPressActionText) longPressActionText.innerHTML = `此时<span class="blink-text">松开按钮</span>，<strong class="font-bold">返回上一级菜单</strong>`; if(longPressOverlay) longPressOverlay.classList.add('visible'); } if (longPressThresholdMet) { const progressPercent = Math.min(100, (elapsedTime / POWER_CONFIRM_DURATION) * 100); setProgress(progressPercent); const remainingSeconds = Math.ceil((POWER_CONFIRM_DURATION - elapsedTime) / 1000); if(progressText) progressText.textContent = remainingSeconds > 0 ? remainingSeconds : '0'; if (elapsedTime >= POWER_CONFIRM_DURATION) { cancelAnimationFrame(longPressTimer); longPressTimer = null; longPressActive = false; if(longPressOverlay) longPressOverlay.classList.remove('visible'); showPowerConfirm(); return; } } if (longPressActive) { longPressTimer = requestAnimationFrame(updateProgress); } }; longPressTimer = requestAnimationFrame(updateProgress); }
-            function cancelLongPress() { if (!longPressActive) return; longPressActive = false; if (longPressTimer) { cancelAnimationFrame(longPressTimer); longPressTimer = null; } if (longPressThresholdMet && longPressOverlay) { longPressOverlay.classList.remove('visible'); } if (currentLongPressDuration >= SHOW_OVERLAY_DURATION && currentLongPressDuration < POWER_CONFIRM_DURATION) { console.log("Executing Back Action (to Main Menu)..."); window.location.href = 'main_menu.html'; } else if (currentLongPressDuration < SHOW_OVERLAY_DURATION) { console.log("Long press cancelled (too short)."); } currentLongPressDuration = 0; longPressThresholdMet = false; }
+            function simulateDirectPowerOff() {
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) {
+                    deviceScreen.innerHTML = '';
+                    deviceScreen.style.backgroundColor = '#000000';
+                }
+                if (longPressActive && longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                    longPressActive = false;
+                }
+            }
+
+            function disableAllButtons() {
+                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {
+                    if(btn) btn.disabled = true;
+                });
+            }
+
+            function startLongPress() {
+                if (longPressActive) return;
+                longPressActive = true;
+                longPressStartTime = Date.now();
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+                if (hintBar) hintBar.classList.add('long-press-active');
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintLoop() {
+                if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() {
+                currentLongPressDuration = Date.now() - longPressStartTime;
+                if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
+                    if (longPressActive) simulateDirectPowerOff();
+                    return;
+                }
+                
+                const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                if (hintBar) {
+                    hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+                }
+                
+                currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
+            }
+
+            function cancelLongPress() {
+                if (!longPressActive) return;
+                longPressActive = false;
+                if (longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                }
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                    hintBar.textContent = "旋转选择 | 短按确认";
+                }
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
+                    window.location.href = 'main_menu.html';
+                }
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            }
 
 
             // --- Event Listeners ---
@@ -487,10 +532,6 @@
             updateSoundToggleVisual();
             updateLanguageVisual();
             updatePageIndicator();
-            if(progressCircle) {
-                progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
-                progressCircle.style.strokeDashoffset = circumference;
-            }
             if(statusPrompt) statusPrompt.textContent = "设置";
             if(hintBar) hintBar.textContent = "旋转选择 | 短按确认";
 

@@ -411,7 +411,7 @@
             if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
                 remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
                 if (hintBar) {
-                    hintBar.innerHTML = `长按<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>后将关机，现在松开旋钮返回上一级菜单`;
+                    hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                 }
                 if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
                     currentLongPressAction = LONG_PRESS_ACTION_NONE; 
@@ -421,10 +421,7 @@
             } else { // currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION
                 // Directly trigger power off and stop further updates from this loop
                 if (longPressActive) { // Ensure it's only called once
-                    // No need to set currentLongPressAction to POWER_OFF as we are shutting down
-                    // No need to update hintBar text to "松开以关机"
                     simulateDirectPowerOff(); 
-                    // Note: simulateDirectPowerOff should handle stopping the longPressTimer and longPressActive
                 }
                 return; // Exit function as device is "off"
             }
@@ -444,13 +441,8 @@
             }
             if (statusPrompt) statusPrompt.textContent = "通用称重"; 
 
-            // Power off is now handled by updateLongPressHintText if duration >= 5s
-            // So, if cancelLongPress is called, it means user released конку POWER_OFF_DURATION
             if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
-                console.log("Executing Back Action (松开时触发 <5s)...");
                 window.location.href = 'main_menu.html';
-            } else { 
-                console.log("Long press cancelled (不足1秒).");
             }
             currentLongPressDuration = 0;
             currentLongPressAction = LONG_PRESS_ACTION_NONE;

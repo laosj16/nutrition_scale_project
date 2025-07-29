@@ -273,20 +273,15 @@
             if (currentLongPressDuration < LONG_PRESS_POWER_OFF_DURATION) {
                 remainingSecondsForPowerOff = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
                 if (hintBar) {
-                    // 主菜单页面显示"返回首页"而不是"返回"
-                    hintBar.innerHTML = `长按返回首页  | 继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
+                    hintBar.innerHTML = `继续按住<span class="blink-text-inline">${remainingSecondsForPowerOff}s</span>关机`;
                 }
-                if (currentLongPressDuration < LONG_PRESS_RETURN_DURATION) {
-                    currentLongPressAction = LONG_PRESS_ACTION_NONE; 
-                } else {
-                    currentLongPressAction = LONG_PRESS_ACTION_RETURN; 
-                }
+                // No return action on this page
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
             } else { // currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION
-                // Directly trigger power off and stop further updates from this loop
-                if (longPressActive) { // Ensure it's only called once
+                if (longPressActive) {
                     simulateDirectPowerOff(); 
                 }
-                return; // Exit function as device is "off"
+                return;
             }
         }
 
@@ -303,14 +298,8 @@
                 hintBar.textContent = "旋转选择｜短按确认"; 
             }
 
-            // Execute action based on duration when button is released
-            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) { 
-                console.log("Executing Return Action (返回首页)...");
-                // 主菜单页面没有上一级菜单，直接返回首页
-                window.location.href = 'index.html';
-            } else { 
-                console.log("Long press cancelled (不足1秒).");
-            }
+            // No action is taken on release, as there's no "back" functionality here.
+            console.log("Long press cancelled.");
             currentLongPressDuration = 0;
             currentLongPressAction = LONG_PRESS_ACTION_NONE;
         }

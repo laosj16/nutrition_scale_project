@@ -125,6 +125,17 @@
         let currentIndex = 0;
         let currentLanguage = localStorage.getItem('selectedLanguage') || 'zh-CN';
 
+        // --- Long Press State ---
+        let longPressTimer = null;
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0;
+        let longPressActive = false;
+        const LONG_PRESS_RETURN_DURATION = 1000;
+        const LONG_PRESS_POWER_OFF_DURATION = 5000;
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
+
         function initPage() {
             currentIndex = languages.findIndex(lang => lang.id === currentLanguage);
             if (currentIndex === -1) currentIndex = 0;
@@ -162,14 +173,85 @@
         document.getElementById('btn-short-press').addEventListener('click', confirmSelection);
         document.getElementById('btn-return-index').addEventListener('click', () => { window.location.href = 'index.html'; });
 
-        let longPressTimer = null;
-        document.getElementById('btn-long-press').addEventListener('mousedown', () => {
-            longPressTimer = setTimeout(() => {
+        // --- Long Press Functions ---
+        function simulateDirectPowerOff() {
+            disableAllButtons();
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = '';
+                deviceScreen.style.backgroundColor = '#000000';
+            }
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+                longPressActive = false;
+            }
+        }
+
+        function disableAllButtons() {
+            [document.getElementById('btn-rotate-left'), document.getElementById('btn-rotate-right'), document.getElementById('btn-short-press'), document.getElementById('btn-long-press'), document.getElementById('btn-return-index')].forEach(btn => {
+                if(btn) btn.disabled = true;
+            });
+        }
+
+        function startLongPress() {
+            if (longPressActive) return;
+            longPressActive = true;
+            longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            const hintBar = document.getElementById('hintBar');
+            if (hintBar) hintBar.classList.add('long-press-active');
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintText() {
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
+                if (longPressActive) simulateDirectPowerOff();
+                return;
+            }
+            
+            const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+            const hintBar = document.getElementById('hintBar');
+            if (hintBar) {
+                hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+            }
+            
+            currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
+        }
+
+        function cancelLongPress() {
+            if (!longPressActive) return;
+            longPressActive = false;
+            if (longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+            }
+            const hintBar = document.getElementById('hintBar');
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+                hintBar.textContent = "旋转选择 | 短按确认";
+            }
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
                 window.location.href = 'settings_menu.html';
-            }, 1000);
-        });
-        document.getElementById('btn-long-press').addEventListener('mouseup', () => clearTimeout(longPressTimer));
-        document.getElementById('btn-long-press').addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+            }
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+        }
+
+        const btnLongPress = document.getElementById('btn-long-press');
+        if (btnLongPress) {
+            btnLongPress.addEventListener('mousedown', startLongPress);
+            btnLongPress.addEventListener('mouseup', cancelLongPress);
+            btnLongPress.addEventListener('mouseleave', cancelLongPress);
+        }
 
         document.addEventListener('DOMContentLoaded', initPage);
     </script>

@@ -111,6 +111,7 @@
     <div class="interaction-controls">
         <button id="btn-simulate-low" class="control-button warning">模拟电量 < 10%</button>
         <button id="btn-simulate-empty" class="control-button danger">模拟电量 0%</button>
+        <button id="btn-long-press" class="control-button secondary" title="模拟长按旋钮">长按 (返回/关机)</button>
         <button id="btn-return-index" class="control-button secondary">返回目录</button>
     </div>
 
@@ -131,8 +132,7 @@
         const btnSimulateLow = document.getElementById('btn-simulate-low');
         const btnSimulateEmpty = document.getElementById('btn-simulate-empty');
         const btnReturnIndex = document.getElementById('btn-return-index');
-        // btnToggleLanguage removed
-        // const btnReturnEmpty = document.getElementById('btn-return-empty'); // Removed
+        const btnLongPress = document.getElementById('btn-long-press');
 
         let isShuttingDown = false;
         let emptyBatteryShutdownTimer = null; // Added for cancellable shutdown
@@ -143,6 +143,17 @@
         const unitColors = { 'g': 'unit-g', 'ml': 'unit-ml', 'oz': 'unit-oz', 'lb': 'unit-lb'};
         let currentUnitIndex = 0;
         let tareTimeout = null;
+
+        // --- Long Press State ---
+        let longPressTimer = null;
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0;
+        let longPressActive = false;
+        const LONG_PRESS_RETURN_DURATION = 1000;
+        const LONG_PRESS_POWER_OFF_DURATION = 5000;
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
 
         // --- General Weighing Functions (Simplified) ---
@@ -264,6 +275,76 @@
             }, 3000); // 3 seconds to shutdown
         }
 
+        // --- Long Press Functions ---
+        function simulateDirectPowerOff() {
+            disableAllButtons();
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = '';
+                deviceScreen.style.backgroundColor = '#000000';
+            }
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+                longPressActive = false;
+            }
+        }
+
+        function disableAllButtons() {
+            [btnSimulateLow, btnSimulateEmpty, btnReturnIndex, btnLongPress].forEach(btn => {
+                if(btn) btn.disabled = true;
+            });
+        }
+
+        function startLongPress() {
+            if (longPressActive) return;
+            longPressActive = true;
+            longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            if (hintBar) hintBar.classList.add('long-press-active');
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintText() {
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
+                if (longPressActive) simulateDirectPowerOff();
+                return;
+            }
+            
+            const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+            if (hintBar) {
+                hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+            }
+            
+            currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
+        }
+
+        function cancelLongPress() {
+            if (!longPressActive) return;
+            longPressActive = false;
+            if (longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+            }
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+                hintBar.textContent = "左右旋转切换单位 , 短按“TARE”去皮";
+            }
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
+                window.location.href = 'main_menu.html';
+            }
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+        }
+
         // --- Event Listeners ---
         if (btnSimulateLow) {
             btnSimulateLow.addEventListener('click', simulateLowBatteryWarning);
@@ -271,16 +352,16 @@
         if (btnSimulateEmpty) {
             btnSimulateEmpty.addEventListener('click', simulateEmptyBatteryShutdown);
         }
-        // Removed btnReturnLow event listener as the screen auto-hides
-        // Removed btnReturnEmpty event listener as the button is removed
-
         if (btnReturnIndex) {
             btnReturnIndex.addEventListener('click', () => {
                 window.location.href = 'index.html';
             });
         }
-
-        // btnToggleLanguage event listener removed
+        if (btnLongPress) {
+            btnLongPress.addEventListener('mousedown', startLongPress);
+            btnLongPress.addEventListener('mouseup', cancelLongPress);
+            btnLongPress.addEventListener('mouseleave', cancelLongPress);
+        }
 
         // --- Initial Setup ---
         updateWeighingDisplay();

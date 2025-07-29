@@ -126,9 +126,17 @@
             // btnToggleLanguage removed
 
             let selectedIndex = 0; // 0 for Cancel, 1 for Confirm
+            
+            // --- Long Press State ---
             let longPressTimer = null;
+            let longPressStartTime = 0;
+            let currentLongPressDuration = 0;
             let longPressActive = false;
-            const LONG_PRESS_DURATION_BACK = 1000; // 1 second for back navigation
+            const LONG_PRESS_RETURN_DURATION = 1000;
+            const LONG_PRESS_POWER_OFF_DURATION = 5000;
+            const LONG_PRESS_ACTION_NONE = 0;
+            const LONG_PRESS_ACTION_RETURN = 1;
+            let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
             let autoReturnTimer = null;
             let countdownInterval = null;
@@ -206,6 +214,21 @@
                 }
             }
             
+            // --- Long Press Functions ---
+            function simulateDirectPowerOff() {
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) {
+                    deviceScreen.innerHTML = '';
+                    deviceScreen.style.backgroundColor = '#000000';
+                }
+                if (longPressActive && longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                    longPressActive = false;
+                }
+            }
+
             function setProgress(percent) {
                 if(!progressCircle) return;
                 const offset = circumference - (percent / 100 * circumference);
@@ -245,25 +268,57 @@
                 if (longPressActive || actionOverlay.classList.contains('visible')) return;
                 stopAutoReturnTimer(); // Stop auto return if long press starts
                 longPressActive = true;
-                longPressTimer = setTimeout(() => {
-                    if (longPressActive) { 
-                        console.log("Long press activated: Navigating back to settings menu.");
-                        window.location.href = 'settings_menu.html';
-                    }
-                }, LONG_PRESS_DURATION_BACK);
+                longPressStartTime = Date.now();
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+                if (hintBar) hintBar.classList.add('long-press-active');
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintLoop() {
+                if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() {
+                currentLongPressDuration = Date.now() - longPressStartTime;
+                if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
+                    if (longPressActive) simulateDirectPowerOff();
+                    return;
+                }
+                
+                const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                if (hintBar) {
+                    hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+                }
+                
+                currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
             }
 
             function cancelLongPress() {
-                if (longPressTimer) clearTimeout(longPressTimer);
+                if (!longPressActive) return;
                 longPressActive = false;
-                // If no other action is pending, restart auto-return timer
-                if (!actionOverlay.classList.contains('visible')) {
-                    startAutoReturnTimer();
+                if (longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
                 }
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                }
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
+                    window.location.href = 'settings_menu.html';
+                } else {
+                    if (!actionOverlay.classList.contains('visible')) {
+                        startAutoReturnTimer();
+                    }
+                }
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
             }
 
             function disableAllButtons() {
-                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => { // Removed btnToggleLanguage
+                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex].forEach(btn => {
                     if(btn) btn.disabled = true;
                 });
             }

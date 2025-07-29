@@ -321,9 +321,17 @@
         
         let foodItemElements = [];
         let tareTimeout = null;
-        let longPressTimer = null, longPressStartTime = 0, currentLongPressDuration = 0, longPressActive = false;
-        const LONG_PRESS_RETURN_DURATION = 1000, LONG_PRESS_POWER_OFF_DURATION = 5000;
-        let currentLongPressAction = 0;
+        
+        // --- Long Press State ---
+        let longPressTimer = null;
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0;
+        let longPressActive = false;
+        const LONG_PRESS_RETURN_DURATION = 1000;
+        const LONG_PRESS_POWER_OFF_DURATION = 5000;
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
         window.addEventListener('load', () => {
             // --- DOM 元素获取 ---
@@ -567,39 +575,76 @@
                 }
             }
 
+            // --- Long Press Functions ---
+            function simulateDirectPowerOff() {
+                disableAllButtons();
+                const deviceScreen = document.querySelector('.device-screen');
+                if (deviceScreen) {
+                    deviceScreen.innerHTML = '';
+                    deviceScreen.style.backgroundColor = '#000000';
+                }
+                if (longPressActive && longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                    longPressActive = false;
+                }
+            }
+
+            function disableAllButtons() {
+                [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnReturnIndex, btnAddWeight].forEach(btn => {
+                    if(btn) btn.disabled = true;
+                });
+            }
+
             function startLongPress() {
                 if (longPressActive) return;
-                longPressActive = true; longPressStartTime = Date.now();
-                hintBar.classList.add('long-press-active');
+                longPressActive = true;
+                longPressStartTime = Date.now();
+                currentLongPressDuration = 0;
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
+                if (hintBar) hintBar.classList.add('long-press-active');
+                updateLongPressHintText();
                 longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
             }
 
             function updateLongPressHintLoop() {
                 if (!longPressActive) return;
+                updateLongPressHintText();
+                longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+            }
+
+            function updateLongPressHintText() {
                 currentLongPressDuration = Date.now() - longPressStartTime;
                 if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
-                    simulateDirectPowerOff();
+                    if (longPressActive) simulateDirectPowerOff();
                     return;
                 }
-                const remaining = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
-                hintBar.innerHTML = `长按返回上级 | 继续按住<span class="blink-text-inline">${remaining}s</span>关机`;
-                currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? 2 : 1;
-                requestAnimationFrame(updateLongPressHintLoop);
+                
+                const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+                if (hintBar) {
+                    hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+                }
+                
+                currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
             }
 
             function cancelLongPress() {
                 if (!longPressActive) return;
-                longPressActive = false; cancelAnimationFrame(longPressTimer);
-                hintBar.classList.remove('long-press-active');
-                if (currentLongPressAction === 2) { // 2 means return
+                longPressActive = false;
+                if (longPressTimer) {
+                    cancelAnimationFrame(longPressTimer);
+                    longPressTimer = null;
+                }
+                if (hintBar) {
+                    hintBar.classList.remove('long-press-active');
+                }
+                // Restore hint text by calling updateUI
+                updateUI();
+                
+                if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
                     window.location.href = 'main_menu.html';
                 }
-                updateUI(); // 恢复提示文字
-            }
-            
-            function simulateDirectPowerOff() {
-                document.body.innerHTML = '';
-                document.body.style.backgroundColor = '#000';
+                currentLongPressAction = LONG_PRESS_ACTION_NONE;
             }
 
             // --- 初始化和事件绑定 ---

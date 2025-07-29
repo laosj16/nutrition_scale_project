@@ -120,8 +120,17 @@
         const unitColors = { 'g': 'unit-g', 'ml': 'unit-ml', 'oz': 'unit-oz', 'lb': 'unit-lb' };
         let currentUnitIndex = 0;
         let tareTimeout = null;
+
+        // --- Long Press State ---
         let longPressTimer = null;
+        let longPressStartTime = 0;
+        let currentLongPressDuration = 0;
         let longPressActive = false;
+        const LONG_PRESS_RETURN_DURATION = 1000;
+        const LONG_PRESS_POWER_OFF_DURATION = 5000;
+        const LONG_PRESS_ACTION_NONE = 0;
+        const LONG_PRESS_ACTION_RETURN = 1;
+        let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
         // --- Functions ---
         function getDecimalPlaces(weight, unit) {
@@ -207,24 +216,76 @@
             tareTimeout = setTimeout(() => { tareIndicator.classList.remove('visible'); }, 1000);
         }
 
+        // --- Long Press Functions ---
+        function simulateDirectPowerOff() {
+            disableAllButtons();
+            const deviceScreen = document.querySelector('.device-screen');
+            if (deviceScreen) {
+                deviceScreen.innerHTML = '';
+                deviceScreen.style.backgroundColor = '#000000';
+            }
+            if (longPressActive && longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+                longPressActive = false;
+            }
+        }
+
+        function disableAllButtons() {
+            [btnRotateLeft, btnRotateRight, btnShortPress, btnLongPress, btnAddWeight, btnReduceWeight, btnReturnIndex].forEach(btn => {
+                if(btn) btn.disabled = true;
+            });
+        }
+
         function startLongPress() {
             if (longPressActive) return;
             longPressActive = true;
-            hintBar.classList.add('long-press-active');
-            hintBar.innerHTML = `现在松开旋钮返回上一级菜单`;
-            longPressTimer = setTimeout(() => {
-                if (longPressActive) {
-                    window.location.href = 'main_menu.html';
-                }
-            }, 1000);
+            longPressStartTime = Date.now();
+            currentLongPressDuration = 0;
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
+            if (hintBar) hintBar.classList.add('long-press-active');
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintLoop() {
+            if (!longPressActive) return;
+            updateLongPressHintText();
+            longPressTimer = requestAnimationFrame(updateLongPressHintLoop);
+        }
+
+        function updateLongPressHintText() {
+            currentLongPressDuration = Date.now() - longPressStartTime;
+            if (currentLongPressDuration >= LONG_PRESS_POWER_OFF_DURATION) {
+                if (longPressActive) simulateDirectPowerOff();
+                return;
+            }
+            
+            const remainingSeconds = Math.ceil((LONG_PRESS_POWER_OFF_DURATION - currentLongPressDuration) / 1000);
+            if (hintBar) {
+                hintBar.innerHTML = `长按返回  | 继续按住<span class="blink-text-inline">${remainingSeconds}s</span>关机`;
+            }
+            
+            currentLongPressAction = (currentLongPressDuration >= LONG_PRESS_RETURN_DURATION) ? LONG_PRESS_ACTION_RETURN : LONG_PRESS_ACTION_NONE;
         }
 
         function cancelLongPress() {
             if (!longPressActive) return;
             longPressActive = false;
-            clearTimeout(longPressTimer);
-            hintBar.classList.remove('long-press-active');
-            updateDisplay(); // Restore hint text
+            if (longPressTimer) {
+                cancelAnimationFrame(longPressTimer);
+                longPressTimer = null;
+            }
+            if (hintBar) {
+                hintBar.classList.remove('long-press-active');
+            }
+            // Restore hint text by calling updateDisplay
+            updateDisplay();
+            
+            if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
+                window.location.href = 'main_menu.html';
+            }
+            currentLongPressAction = LONG_PRESS_ACTION_NONE;
         }
 
         // --- Event Listeners ---
