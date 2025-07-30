@@ -75,8 +75,7 @@
         <div class="main-content">
             <i class="fas fa-triangle-exclamation warning-icon"></i>
             <p class="warning-text">
-                确定要恢复出厂设置吗？<br>
-                所有用户数据和个性化设置都将被清除，设备将恢复到初始状态。此操作无法撤销。
+                确定要恢复出厂设置吗？
             </p>
             <ul class="options-list">
                 <li class="option-item" data-action="cancel">取消</li>
@@ -85,7 +84,7 @@
         </div>
 
         <div id="hint-bar" class="hint-bar">
-            旋转选择 | 短按确认
+            旋转旋转 | 短按确认
         </div>
 
         <div id="action-overlay" class="overlay">
@@ -138,10 +137,8 @@
             const LONG_PRESS_ACTION_RETURN = 1;
             let currentLongPressAction = LONG_PRESS_ACTION_NONE;
 
-            let autoReturnTimer = null;
-            let countdownInterval = null;
-            let countdownValue = 5; // seconds
-            const AUTO_RETURN_DELAY = 5000; // 5 seconds in milliseconds
+            let autoReturnTimer = null; // Will be removed
+            let countdownInterval = null; // Will be removed
 
             const radius = progressCircle ? parseFloat(progressCircle.getAttribute('r')) : 0;
             const circumference = radius * 2 * Math.PI;
@@ -152,58 +149,18 @@
                 });
             }
 
-            function updateHintBarCountdown() {
-                if (!hintBar) return;
-                if (actionOverlay.classList.contains('visible')) { // If action started, clear countdown text
-                    hintBar.textContent = "旋转选择, 短按确认"; // Or specific action text
-                    return;
-                }
-                if (countdownValue > 0) {
-                    hintBar.textContent = `旋转选择 (${countdownValue}s后返回)`;
-                } else {
-                    hintBar.textContent = `即将返回...`; 
-                }
-            }
-
-            function startAutoReturnTimer() {
-                if (autoReturnTimer) clearTimeout(autoReturnTimer);
-                if (countdownInterval) clearInterval(countdownInterval);
-                
-                countdownValue = AUTO_RETURN_DELAY / 1000;
-                updateHintBarCountdown();
-
-                countdownInterval = setInterval(() => {
-                    countdownValue--;
-                    updateHintBarCountdown();
-                    if (countdownValue <= 0) {
-                        clearInterval(countdownInterval);
-                    }
-                }, 1000);
-
-                autoReturnTimer = setTimeout(() => {
-                    if (!actionOverlay.classList.contains('visible')) {
-                        console.log("Auto-return due to inactivity.");
-                        window.location.href = 'settings_menu.html';
-                    }
-                }, AUTO_RETURN_DELAY);
-            }
-            
             function stopAutoReturnTimer() {
-                if (autoReturnTimer) clearTimeout(autoReturnTimer);
-                if (countdownInterval) clearInterval(countdownInterval);
-                hintBar.textContent = "旋转选择, 短按确认"; // Reset hint bar
+                // This function is now empty as countdown is removed.
             }
 
             function rotate(direction) {
                 if (actionOverlay.classList.contains('visible')) return; 
                 selectedIndex = (selectedIndex + direction + optionItems.length) % optionItems.length;
                 updateSelection();
-                startAutoReturnTimer(); // Reset timer on interaction
             }
 
             function handleShortPress() {
                 if (actionOverlay.classList.contains('visible')) return;
-                stopAutoReturnTimer(); // Stop auto return on explicit action
 
                 const selectedAction = optionItems[selectedIndex].getAttribute('data-action');
 
@@ -236,7 +193,6 @@
             }
 
             function performFactoryReset() {
-                stopAutoReturnTimer(); // Ensure auto-return is stopped
                 hintBar.textContent = "处理中..."; // Update hint bar during action
                 actionTextElement.textContent = "正在恢复出厂设置...";
                 if(progressCircle) {
@@ -266,7 +222,6 @@
             
             function startLongPress() {
                 if (longPressActive || actionOverlay.classList.contains('visible')) return;
-                stopAutoReturnTimer(); // Stop auto return if long press starts
                 longPressActive = true;
                 longPressStartTime = Date.now();
                 currentLongPressDuration = 0;
@@ -309,10 +264,6 @@
                 }
                 if (currentLongPressAction === LONG_PRESS_ACTION_RETURN) {
                     window.location.href = 'settings_menu.html';
-                } else {
-                    if (!actionOverlay.classList.contains('visible')) {
-                        startAutoReturnTimer();
-                    }
                 }
                 currentLongPressAction = LONG_PRESS_ACTION_NONE;
             }
@@ -340,8 +291,7 @@
             // Initial Setup
             updateSelection(); // Default to "取消"
             if(statusPrompt) statusPrompt.textContent = "恢复出厂设置";
-            // hintBar text is set by startAutoReturnTimer
-            startAutoReturnTimer(); 
+            if(hintBar) hintBar.textContent = "旋转旋转 | 短按确认";
         });
     </script>
 
