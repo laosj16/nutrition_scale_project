@@ -500,7 +500,8 @@
                     populateNutrientDisplays();
                     showCurrentNutritionPage();
                 } else {
-                    statusPrompt.textContent = "选择食物";
+                    const food = foodDatabase[selectedFoodIndex];
+                    statusPrompt.textContent = food.name;
                     hintBar.textContent = "旋转选择 | 短按确认";
                     btnShortPress.textContent = "确认食物 (短按)";
                     updateFoodSelectionVisuals();
@@ -521,7 +522,7 @@
                     if ((start + index) === selectedFoodIndex) {
                         item.classList.add('selected');
                     }
-                    item.innerHTML = `<span style="font-size: 2.5em;">${food.icon}</span><span>${food.name}</span>`;
+                    item.innerHTML = `<span style="font-size: 3.5em;">${food.icon}</span>`;
                     foodGrid.appendChild(item);
                 });
 
