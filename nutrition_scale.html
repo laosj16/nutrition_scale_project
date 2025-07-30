@@ -127,10 +127,28 @@
         .hidden { display: none !important; }
 
         /* 页面指示器 */
-        .page-indicator-container { display: flex; justify-content: flex-end; align-items: center; padding: 8px 15px; flex-shrink: 0; height: 24px; position: absolute; bottom: 5px; right: 0; width: 100%; z-index: 10; }
+        .page-indicator-container { display: flex; justify-content: center; align-items: center; padding: 8px 0; flex-shrink: 0; height: 24px; position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%); z-index: 10; }
         .page-dot { width: 8px; height: 8px; background-color: #555; border-radius: 50%; margin: 0 4px; transition: background-color 0.3s ease, transform 0.3s ease; }
         .page-dot.active { background-color: #007AFF; transform: scale(1.2); }
         
+        /* 食物选择页面指示器 (垂直) */
+        #food-page-indicator {
+            justify-content: center;
+            flex-direction: column;
+            gap: 8px;
+            top: 50%;
+            right: 15px;
+            bottom: auto;
+            left: auto;
+            width: auto;
+            height: auto;
+            transform: translateY(-50%);
+            padding: 0;
+        }
+        #food-page-indicator .page-dot {
+            margin: 0;
+        }
+
         /* 营养信息页面指示器 (垂直) */
         #nutrition-page-indicator { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 5; }
         #nutrition-page-indicator .page-dot { margin: 0; }
